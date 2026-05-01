@@ -175,6 +175,24 @@ G:\내 드라이브\JH-SHARED\04_DAILY_REPORTS\YYYY\YYYY-MM\YYYY-MM-DD.md
 powershell -ExecutionPolicy Bypass -File .\scripts\new-daily-report.ps1
 ```
 
+작업 항목 추가:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\add-daily-entry.ps1 -Speaker codex -Kind verification -Body "검증 결과"
+```
+
+Markdown 정리본 재생성:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build-daily-report.ps1
+```
+
+충돌 방지 규칙:
+
+- Claude와 Codex는 같은 `YYYY-MM-DD.md`를 동시에 직접 편집하지 않습니다.
+- 각 주체의 원본 입력은 `YYYY-MM-DD.entries\주체\PC명.jsonl`에 append-only로 저장합니다.
+- `YYYY-MM-DD.md`는 JSONL 원본에서 재생성되는 읽기용 정리본으로 취급합니다.
+
 일일보고 포함 항목:
 
 - 오늘 작업 요약
