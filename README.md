@@ -146,3 +146,16 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-agent-context.ps1
 - `JH-SHARED\02_HANDOFF\claude-sync-context-guard.md`
 
 확인 후 Agent Room에서 `동기화` 또는 `업데이트`를 눌러 현재 PC 스냅샷을 남깁니다.
+## 사전 검수 필수 규칙
+
+Agent Room을 통한 Claude 작업은 사용자에게 최종 전달되기 전에 Codex 검수를 항상 거칩니다.
+
+순서:
+
+1. 사용자 지시
+2. Claude 구현 또는 보고 초안
+3. Codex 독립 검수
+4. Codex 검수 결과 기록
+5. 사용자 최종 보고
+
+Claude는 Codex 검수 없이 완료 보고를 확정하지 않습니다.
