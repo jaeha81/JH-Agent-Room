@@ -20,6 +20,7 @@ loadEnvFile()
 
 const PORT = Number(process.env.PORT || 3100)
 const SHARED_DIR = process.env.AGENT_ROOM_SHARED_DIR || 'G:\\내 드라이브\\JH-SHARED'
+const OBSIDIAN_VAULT_DIR = process.env.OBSIDIAN_VAULT_DIR || 'C:\\Users\\user1\\Documents\\Obsidian Vault'
 const SYSTEM_DIR = path.join(SHARED_DIR, '00_SYSTEM')
 const AGENT_ROOM_DIR = path.join(SHARED_DIR, '01_AGENT_ROOM')
 const LOGS_DIR = path.join(SHARED_DIR, '03_LOGS')
@@ -34,8 +35,8 @@ const syncTargets = [
   { label: 'JH-SHARED 경로 명세', file: path.join(SYSTEM_DIR, 'paths.md') },
   { label: 'Codex 마스터 상태', file: 'G:\\내 드라이브\\codex\\CODEX_MASTER_STATUS.md' },
   { label: 'Codex 운영 규칙', file: 'G:\\내 드라이브\\codex\\CODEX_OPERATING_RULES.md' },
-  { label: 'Obsidian Vault 인덱스', file: 'C:\\Users\\user1\\Documents\\Obsidian Vault\\wiki\\index.md' },
-  { label: 'Obsidian Vault 로그', file: 'C:\\Users\\user1\\Documents\\Obsidian Vault\\wiki\\log.md' },
+  { label: 'Obsidian Vault 인덱스', file: path.join(OBSIDIAN_VAULT_DIR, 'wiki', 'index.md') },
+  { label: 'Obsidian Vault 로그', file: path.join(OBSIDIAN_VAULT_DIR, 'wiki', 'log.md') },
 ]
 
 const starterMessages = [
