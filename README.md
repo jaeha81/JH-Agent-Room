@@ -89,6 +89,30 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start-agent-room.ps1
 공유 메시지 로그는 코드 저장소에 커밋하지 않고 `G:\내 드라이브\JH-SHARED\01_AGENT_ROOM\agent-room-messages.jsonl`을 사용합니다.
 각 PC는 로컬 실행본만 GitHub에서 동기화합니다.
 
+## 코드 변경 GitHub 반영 규칙
+
+Agent Room의 코드, 스크립트, README, 운영 문서가 바뀐 경우에는 다른 PC에서도 같은 실행본을 쓰도록 GitHub에 반영합니다.
+
+원칙:
+
+- 코드 변경은 `git status`로 변경 파일을 확인합니다.
+- 실행 또는 문법 검증이 가능한 경우 먼저 확인합니다.
+- 민감정보가 담긴 `.env`와 로컬 로그 파일은 커밋하지 않습니다.
+- 검증된 변경만 커밋하고 `git push origin main`으로 반영합니다.
+- Agent Room 화면의 `동기화` 버튼은 GitHub push가 아니라 공유 로그 기록입니다.
+
+수동 반영:
+
+```powershell
+cd C:\ai프로젝트\JH-Agent-Room
+git status
+git add README.md server.js public scripts
+git commit -m "describe change"
+git push origin main
+```
+
+Codex나 Claude가 Agent Room 코드를 수정한 경우에는 사용자에게 별도 요청이 없어도 검증 후 GitHub 반영 여부를 보고하고, 승인된 운영 범위에서는 커밋/푸쉬까지 진행합니다.
+
 ## 3대 PC 동기화 규칙
 
 Agent Room은 3대 PC를 오가는 작업을 위해 아래 공유 기준을 사용합니다.
