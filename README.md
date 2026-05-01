@@ -210,3 +210,45 @@ G:\내 드라이브\JH-SHARED\04_DAILY_REPORTS\2026\2026-05\2026-05-01.md
 ```
 
 다음날 또는 다른 PC에서 시작할 때 Claude/Codex는 최근 일일보고와 `check-agent-context.ps1` 결과를 함께 확인합니다.
+
+## 병렬 작업 잠금
+
+Claude와 Codex가 동시에 여러 작업을 진행할 때는 `taskId` 기준으로 작업 잠금과 작업 로그를 남깁니다.
+
+저장 위치:
+
+```text
+G:\내 드라이브\JH-SHARED\05_TASK_LOCKS\active\TASK_ID.json
+G:\내 드라이브\JH-SHARED\05_TASK_LOCKS\done\YYYY-MM\TASK_ID.json
+G:\내 드라이브\JH-SHARED\06_TASK_LOGS\YYYY-MM\TASK_ID.jsonl
+```
+
+작업 시작:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start-task.ps1 -Owner claude -Mode implementation -Title "작업 제목" -Targets "D:\ai프로젝트\project\src"
+```
+
+충돌 확인:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\check-task-conflicts.ps1 -Targets "D:\ai프로젝트\project\src"
+```
+
+작업 기록:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\log-task.ps1 -TaskId "TASK_ID" -Speaker codex -Kind review -Body "검수 결과"
+```
+
+작업 완료:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\finish-task.ps1 -TaskId "TASK_ID" -Speaker claude
+```
+
+충돌 기준:
+
+- 같은 대상 경로 또는 상하위 경로를 다른 active 작업이 사용 중이면 충돌로 판단합니다.
+- 충돌 시 자동 진행하지 않고 사용자에게 보고합니다.
+- `-Force`는 사용자가 명시 승인한 경우에만 사용합니다.
