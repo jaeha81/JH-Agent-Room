@@ -121,5 +121,28 @@ Claude 전달 브리핑:
 ```text
 G:\내 드라이브\JH-SHARED\02_HANDOFF\claude-sync-context-guard.md
 ```
+## 다른 PC에서 Claude/Codex 전제 확인
 
+다른 PC에서 Claude 또는 Codex가 시작하면 전역 지침 전체를 읽기 전에 아래 명령으로 최소 공유 컨텍스트를 확인합니다.
 
+```powershell
+cd C:\ai프로젝트\JH-Agent-Room
+powershell -ExecutionPolicy Bypass -File .\scripts\check-agent-context.ps1
+```
+
+집 PC에서는 경로만 바꿉니다.
+
+```powershell
+cd D:\ai프로젝트\JH-Agent-Room
+powershell -ExecutionPolicy Bypass -File .\scripts\check-agent-context.ps1
+```
+
+확인 대상:
+
+- `JH-SHARED\00_SYSTEM\agent-onboarding.md`
+- `JH-SHARED\00_SYSTEM\sync-protocol.md`
+- `JH-SHARED\00_SYSTEM\jh-system.md`
+- `JH-SHARED\00_SYSTEM\paths.md`
+- `JH-SHARED\02_HANDOFF\claude-sync-context-guard.md`
+
+확인 후 Agent Room에서 `동기화` 또는 `업데이트`를 눌러 현재 PC 스냅샷을 남깁니다.
