@@ -166,7 +166,13 @@ PC에서 진행한 작업은 매일 날짜별 보고서로 정리합니다.
 저장 위치:
 
 ```text
-G:\내 드라이브\JH-SHARED\03_LOGS\DAILY\YYYY-MM-DD.md
+G:\내 드라이브\JH-SHARED\04_DAILY_REPORTS\YYYY\YYYY-MM\YYYY-MM-DD.md
+```
+
+새 일일보고 생성:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\new-daily-report.ps1
 ```
 
 일일보고 포함 항목:
@@ -182,7 +188,7 @@ G:\내 드라이브\JH-SHARED\03_LOGS\DAILY\YYYY-MM-DD.md
 2026-05-01 작업 보고:
 
 ```text
-G:\내 드라이브\JH-SHARED\03_LOGS\DAILY\2026-05-01.md
+G:\내 드라이브\JH-SHARED\04_DAILY_REPORTS\2026\2026-05\2026-05-01.md
 ```
 
 다음날 또는 다른 PC에서 시작할 때 Claude/Codex는 최근 일일보고와 `check-agent-context.ps1` 결과를 함께 확인합니다.
