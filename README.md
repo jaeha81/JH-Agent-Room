@@ -44,7 +44,7 @@ Codex 메시지:
 메시지는 append-only JSONL 형식으로 아래 파일에 저장됩니다.
 
 ```text
-G:\내 드라이브\JH-SHARED\agent-room-messages.jsonl
+G:\내 드라이브\JH-SHARED\01_AGENT_ROOM\agent-room-messages.jsonl
 ```
 
 ## 보안 기준
@@ -86,5 +86,40 @@ git pull origin main
 powershell -ExecutionPolicy Bypass -File .\scripts\start-agent-room.ps1
 ```
 
-공유 메시지 로그는 코드 저장소에 커밋하지 않고 `G:\내 드라이브\JH-SHARED\agent-room-messages.jsonl`을 사용합니다.
+공유 메시지 로그는 코드 저장소에 커밋하지 않고 `G:\내 드라이브\JH-SHARED\01_AGENT_ROOM\agent-room-messages.jsonl`을 사용합니다.
 각 PC는 로컬 실행본만 GitHub에서 동기화합니다.
+
+## 3대 PC 동기화 규칙
+
+Agent Room은 3대 PC를 오가는 작업을 위해 아래 공유 기준을 사용합니다.
+
+```text
+G:\내 드라이브\JH-SHARED\00_SYSTEM\sync-protocol.md
+G:\내 드라이브\JH-SHARED\00_SYSTEM\jh-system.md
+G:\내 드라이브\JH-SHARED\00_SYSTEM\paths.md
+```
+
+사용자가 `동기화` 또는 `업데이트`를 요청하면 Agent Room은 현재 PC 스냅샷을 아래에 append-only로 기록합니다.
+
+```text
+G:\내 드라이브\JH-SHARED\03_LOGS\sync-state.jsonl
+```
+
+메시지 로그는 아래 위치에 저장합니다.
+
+```text
+G:\내 드라이브\JH-SHARED\01_AGENT_ROOM\agent-room-messages.jsonl
+```
+
+## Claude 컨텍스트 제한
+
+Claude는 동기화 요청을 받았다고 해서 전역 `~/.claude/CLAUDE.md` 전체를 매번 읽지 않습니다.
+먼저 `JH-SHARED/00_SYSTEM`의 최소 기준 파일만 읽고, 필요한 경우에만 현재 프로젝트 지침이나 전역 지침의 관련 섹션을 추가로 읽습니다.
+
+Claude 전달 브리핑:
+
+```text
+G:\내 드라이브\JH-SHARED\02_HANDOFF\claude-sync-context-guard.md
+```
+
+

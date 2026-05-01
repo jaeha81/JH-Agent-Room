@@ -6,9 +6,11 @@ const bodyEl = document.querySelector('#body')
 const errorEl = document.querySelector('#error')
 const refreshEl = document.querySelector('#refresh')
 const quickSyncEl = document.querySelector('#quick-sync')
+const quickUpdateEl = document.querySelector('#quick-update')
 const exportLogEl = document.querySelector('#export-log')
 const autoRefreshEl = document.querySelector('#auto-refresh')
 const storageEl = document.querySelector('#storage')
+const syncStateEl = document.querySelector('#sync-state')
 const agentEnabledEl = document.querySelector('#agent-enabled')
 const filterButtons = Array.from(document.querySelectorAll('[data-filter]'))
 
@@ -96,6 +98,7 @@ function renderPayload(payload) {
   renderMessages(payload.messages)
   renderTargets(payload.syncTargets)
   storageEl.textContent = `저장소: ${payload.storage}`
+  syncStateEl.textContent = `동기화 기록: ${payload.syncState || 'JH-SHARED / 03_LOGS / sync-state.jsonl'}`
   agentEnabledEl.textContent = payload.agentPostingEnabled ? 'Claude/Codex 등록: 활성화됨' : 'Claude/Codex 등록: .env의 ADMIN_SECRET 필요'
 }
 
@@ -160,6 +163,10 @@ refreshEl.addEventListener('click', () => {
 
 quickSyncEl.addEventListener('click', () => {
   postUserMessage('sync', '동기화').catch((error) => setError(error.message))
+})
+
+quickUpdateEl.addEventListener('click', () => {
+  postUserMessage('direction', '업데이트').catch((error) => setError(error.message))
 })
 
 exportLogEl.addEventListener('click', exportLog)

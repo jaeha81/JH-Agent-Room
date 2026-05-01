@@ -1,7 +1,9 @@
 ﻿const fs = require('fs')
 const http = require('http')
+const os = require('os')
 const path = require('path')
 const crypto = require('crypto')
+const { execFileSync } = require('child_process')
 
 function loadEnvFile() {
   const envFile = path.join(__dirname, '.env')
@@ -18,12 +20,18 @@ loadEnvFile()
 
 const PORT = Number(process.env.PORT || 3100)
 const SHARED_DIR = process.env.AGENT_ROOM_SHARED_DIR || 'G:\\내 드라이브\\JH-SHARED'
-const LOG_FILE = path.join(SHARED_DIR, 'agent-room-messages.jsonl')
+const SYSTEM_DIR = path.join(SHARED_DIR, '00_SYSTEM')
+const AGENT_ROOM_DIR = path.join(SHARED_DIR, '01_AGENT_ROOM')
+const LOGS_DIR = path.join(SHARED_DIR, '03_LOGS')
+const LOG_FILE = path.join(AGENT_ROOM_DIR, 'agent-room-messages.jsonl')
+const LEGACY_LOG_FILE = path.join(SHARED_DIR, 'agent-room-messages.jsonl')
+const SYNC_STATE_FILE = path.join(LOGS_DIR, 'sync-state.jsonl')
 const PUBLIC_DIR = path.join(__dirname, 'public')
 
 const syncTargets = [
-  { label: 'JH-SHARED 시스템 브리핑', file: path.join(SHARED_DIR, 'jh-system.md') },
-  { label: 'JH-SHARED 경로 명세', file: path.join(SHARED_DIR, 'paths.md') },
+  { label: '동기화 프로토콜', file: path.join(SYSTEM_DIR, 'sync-protocol.md') },
+  { label: 'JH-SHARED 시스템 브리핑', file: path.join(SYSTEM_DIR, 'jh-system.md') },
+  { label: 'JH-SHARED 경로 명세', file: path.join(SYSTEM_DIR, 'paths.md') },
   { label: 'Codex 마스터 상태', file: 'G:\\내 드라이브\\codex\\CODEX_MASTER_STATUS.md' },
   { label: 'Codex 운영 규칙', file: 'G:\\내 드라이브\\codex\\CODEX_OPERATING_RULES.md' },
   { label: 'Obsidian Vault 인덱스', file: 'C:\\Users\\user1\\Documents\\Obsidian Vault\\wiki\\index.md' },
@@ -37,12 +45,23 @@ const starterMessages = [
 ]
 
 function ensureStore() {
-  fs.mkdirSync(SHARED_DIR, { recursive: true })
+  fs.mkdirSync(SYSTEM_DIR, { recursive: true })
+  fs.mkdirSync(AGENT_ROOM_DIR, { recursive: true })
+  fs.mkdirSync(LOGS_DIR, { recursive: true })
+
+  if (!fs.existsSync(LOG_FILE) && fs.existsSync(LEGACY_LOG_FILE)) {
+    fs.copyFileSync(LEGACY_LOG_FILE, LOG_FILE)
+  }
+
   if (!fs.existsSync(LOG_FILE)) {
     for (const [speaker, kind, body, createdAt] of starterMessages) {
       appendMessage({ speaker, kind, body, createdAt })
     }
   }
+}
+
+function appendJsonLine(file, payload) {
+  fs.appendFileSync(file, JSON.stringify(payload) + '\n', 'utf8')
 }
 
 function appendMessage({ speaker, kind, body, createdAt = new Date().toISOString() }) {
@@ -53,19 +72,23 @@ function appendMessage({ speaker, kind, body, createdAt = new Date().toISOString
     body,
     createdAt,
   }
-  fs.appendFileSync(LOG_FILE, JSON.stringify(message) + '\n', 'utf8')
+  appendJsonLine(LOG_FILE, message)
   return message
 }
 
-function readMessages() {
-  ensureStore()
-  const raw = fs.readFileSync(LOG_FILE, 'utf8').trim()
+function readJsonLines(file) {
+  if (!fs.existsSync(file)) return []
+  const raw = fs.readFileSync(file, 'utf8').trim()
   if (!raw) return []
   return raw
     .split(/\r?\n/)
     .filter(Boolean)
     .map((line) => JSON.parse(line))
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+}
+
+function readMessages() {
+  ensureStore()
+  return readJsonLines(LOG_FILE).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
 }
 
 function statusSnapshot() {
@@ -79,11 +102,56 @@ function statusSnapshot() {
   })
 }
 
+function gitValue(args) {
+  try {
+    return execFileSync('git', args, { cwd: __dirname, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
+  } catch {
+    return null
+  }
+}
+
+function currentPcSnapshot(reason) {
+  const targets = statusSnapshot()
+  const previous = readJsonLines(SYNC_STATE_FILE).at(-1) || null
+  const current = {
+    id: crypto.randomUUID(),
+    reason,
+    createdAt: new Date().toISOString(),
+    hostname: os.hostname(),
+    username: os.userInfo().username,
+    platform: os.platform(),
+    projectRoot: __dirname,
+    gitBranch: gitValue(['branch', '--show-current']),
+    gitCommit: gitValue(['rev-parse', '--short', 'HEAD']),
+    gitStatus: gitValue(['status', '--short']) || '',
+    targetsOk: targets.filter((target) => target.exists).length,
+    targetsTotal: targets.length,
+    previous: previous ? {
+      hostname: previous.hostname,
+      username: previous.username,
+      createdAt: previous.createdAt,
+      gitCommit: previous.gitCommit,
+    } : null,
+  }
+  appendJsonLine(SYNC_STATE_FILE, current)
+  return current
+}
+
+function syncSummary(snapshot) {
+  const pc = `${snapshot.hostname}/${snapshot.username}`
+  const previous = snapshot.previous
+    ? `이전 기록: ${snapshot.previous.hostname}/${snapshot.previous.username} (${snapshot.previous.gitCommit || 'no-git'})`
+    : '이전 기록 없음'
+  const dirty = snapshot.gitStatus ? '로컬 변경 있음' : '로컬 변경 없음'
+  return `동기화 스냅샷 기록: ${pc}, 기준 파일 ${snapshot.targetsOk}/${snapshot.targetsTotal} 확인, ${dirty}, 현재 커밋 ${snapshot.gitCommit || 'unknown'}. ${previous}.`
+}
+
 function safePayload() {
   return {
     messages: readMessages(),
     syncTargets: statusSnapshot(),
-    storage: 'JH-SHARED / agent-room-messages.jsonl',
+    storage: 'JH-SHARED / 01_AGENT_ROOM / agent-room-messages.jsonl',
+    syncState: 'JH-SHARED / 03_LOGS / sync-state.jsonl',
     agentPostingEnabled: Boolean(process.env.ADMIN_SECRET),
   }
 }
@@ -122,6 +190,10 @@ function sendFile(res, filePath) {
   })
 }
 
+function isSyncOrUpdate(kind, body) {
+  return kind === 'sync' || body.includes('동기화') || body.includes('업데이트') || body.toLowerCase().includes('update')
+}
+
 async function handleMessagePost(req, res) {
   try {
     const input = JSON.parse(await readBody(req))
@@ -142,11 +214,10 @@ async function handleMessagePost(req, res) {
 
     appendMessage({ speaker, kind, body })
 
-    if (kind === 'sync' || body.includes('동기화')) {
-      const targets = statusSnapshot()
-      const okCount = targets.filter((target) => target.exists).length
-      appendMessage({ speaker: 'claude', kind: 'implementation', body: `동기화 요청 접수. 공유 기준 ${targets.length}개 중 ${okCount}개가 현재 PC에서 확인되었습니다.` })
-      appendMessage({ speaker: 'codex', kind: 'review', body: '검수 기준: JH-SHARED, Codex 운영 문서, Obsidian Vault, GitHub 상태를 대조한 뒤 사용자에게 직접 보고합니다.' })
+    if (isSyncOrUpdate(kind, body)) {
+      const snapshot = currentPcSnapshot(kind === 'sync' ? 'sync' : 'update')
+      appendMessage({ speaker: 'claude', kind: 'implementation', body: '동기화 요청 접수. 전역 지침 전체가 아니라 JH-SHARED/00_SYSTEM의 최소 기준 파일부터 확인합니다.' })
+      appendMessage({ speaker: 'codex', kind: 'review', body: syncSummary(snapshot) })
     }
 
     sendJson(res, 201, safePayload())
@@ -160,11 +231,7 @@ const server = http.createServer((req, res) => {
 
   if (url.pathname === '/api/messages' && req.method === 'GET') return sendJson(res, 200, safePayload())
   if (url.pathname === '/api/messages' && req.method === 'POST') return void handleMessagePost(req, res)
-  if (url.pathname === '/api/status' && req.method === 'GET') return sendJson(res, 200, {
-    syncTargets: statusSnapshot(),
-    storage: 'JH-SHARED / agent-room-messages.jsonl',
-    agentPostingEnabled: Boolean(process.env.ADMIN_SECRET),
-  })
+  if (url.pathname === '/api/status' && req.method === 'GET') return sendJson(res, 200, safePayload())
 
   const filePath = url.pathname === '/' ? path.join(PUBLIC_DIR, 'index.html') : path.normalize(path.join(PUBLIC_DIR, url.pathname))
   if (!filePath.startsWith(PUBLIC_DIR)) {
