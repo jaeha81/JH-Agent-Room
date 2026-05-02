@@ -14,6 +14,8 @@ const syncStateEl = document.querySelector('#sync-state')
 const agentEnabledEl = document.querySelector('#agent-enabled')
 const searchEl = document.querySelector('#search')
 const detailEl = document.querySelector('#detail')
+const targetSummaryEl = document.querySelector('#target-summary')
+const targetButtons = Array.from(document.querySelectorAll('[data-target]'))
 const filterButtons = Array.from(document.querySelectorAll('[data-filter]'))
 
 const labels = {
@@ -24,12 +26,14 @@ const labels = {
   implementation: '구현',
   review: '검수',
   sync: '동기화',
+  room: '공유 지시',
 }
 
 let currentMessages = []
 let currentFilter = 'all'
 let refreshTimer = null
 let activeMessageId = null
+let currentTarget = 'room'
 
 function formatTimestamp(value) {
   return new Intl.DateTimeFormat('ko-KR', {
@@ -45,6 +49,13 @@ function formatTimestamp(value) {
 function setError(message) {
   errorEl.hidden = !message
   errorEl.textContent = message || ''
+}
+
+function updateTargetUI() {
+  for (const button of targetButtons) {
+    button.classList.toggle('active', button.dataset.target === currentTarget)
+  }
+  targetSummaryEl.textContent = `현재 지시 대상: ${labels[currentTarget]}`
 }
 
 function visibleMessages() {
@@ -66,16 +77,18 @@ function selectMessage(message) {
   activeMessageId = message ? message.id : null
   if (!message) {
     detailEl.className = 'detail-card empty'
-    detailEl.innerHTML = '<strong>선택된 메시지 없음</strong><p>메시지를 선택하면 전체 작업 내용을 확인할 수 있습니다.</p>'
+    detailEl.innerHTML = '<strong>선택된 메시지 없음</strong><p>메시지를 선택하면 전체 작업 내용과 지시 대상을 확인할 수 있습니다.</p>'
     return
   }
 
+  const targetLabel = message.speaker === 'user' ? labels[message.target || 'room'] : '채팅방 기록'
   detailEl.className = `detail-card ${message.speaker}`
   detailEl.innerHTML = `
     <div class="detail-head">
       <span><span class="badge">${labels[message.speaker]}</span> · ${labels[message.kind]}</span>
       <time datetime="${message.createdAt}">${formatTimestamp(message.createdAt)}</time>
     </div>
+    <p class="detail-target">대상: ${targetLabel}</p>
     <pre></pre>
   `
   detailEl.querySelector('pre').textContent = message.body
@@ -99,11 +112,13 @@ function renderMessages(messages) {
     const item = document.createElement('article')
     item.className = `message ${message.speaker}${message.id === activeMessageId ? ' active' : ''}`
     item.tabIndex = 0
+    const targetLabel = message.speaker === 'user' ? labels[message.target || 'room'] : labels[message.speaker]
     item.innerHTML = `
       <div class="message-head">
         <span><span class="badge">${labels[message.speaker]}</span> · ${labels[message.kind]}</span>
         <time datetime="${message.createdAt}">${formatTimestamp(message.createdAt)}</time>
       </div>
+      <div class="message-meta">${targetLabel}</div>
       <p></p>
     `
     item.querySelector('p').textContent = message.body
@@ -172,7 +187,7 @@ async function postUserMessage(kind, body) {
   const response = await fetch('/api/messages', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ speaker: 'user', kind, body }),
+    body: JSON.stringify({ speaker: 'user', kind, target: currentTarget, body }),
   })
   const payload = await response.json()
   if (!response.ok) throw new Error(payload.error || '메시지를 저장하지 못했습니다.')
@@ -238,6 +253,13 @@ exportLogEl.addEventListener('click', exportLog)
 autoRefreshEl.addEventListener('change', scheduleAutoRefresh)
 searchEl.addEventListener('input', () => renderMessages(currentMessages))
 
+for (const button of targetButtons) {
+  button.addEventListener('click', () => {
+    currentTarget = button.dataset.target
+    updateTargetUI()
+  })
+}
+
 for (const button of filterButtons) {
   button.addEventListener('click', () => {
     currentFilter = button.dataset.filter
@@ -246,4 +268,5 @@ for (const button of filterButtons) {
   })
 }
 
+updateTargetUI()
 loadRoom().then(scheduleAutoRefresh).catch((error) => setError(error.message))

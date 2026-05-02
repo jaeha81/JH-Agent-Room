@@ -65,11 +65,17 @@ function appendJsonLine(file, payload) {
   fs.appendFileSync(file, JSON.stringify(payload) + '\n', 'utf8')
 }
 
-function appendMessage({ speaker, kind, body, createdAt = new Date().toISOString() }) {
+function normalizeTarget(speaker, target) {
+  if (speaker !== 'user') return 'room'
+  return ['room', 'claude', 'codex'].includes(target) ? target : 'room'
+}
+
+function appendMessage({ speaker, kind, body, target = 'room', createdAt = new Date().toISOString() }) {
   const message = {
     id: crypto.randomUUID(),
     speaker,
     kind,
+    target: normalizeTarget(speaker, target),
     body,
     createdAt,
   }
@@ -203,6 +209,7 @@ async function handleMessagePost(req, res) {
     const input = JSON.parse(await readBody(req))
     const speaker = input.speaker || 'user'
     const kind = input.kind || 'direction'
+    const target = typeof input.target === 'string' ? input.target.trim() : 'room'
     const body = typeof input.body === 'string' ? input.body.trim() : ''
 
     if (!body) return sendJson(res, 400, { error: 'body is required' })
@@ -216,7 +223,7 @@ async function handleMessagePost(req, res) {
       }
     }
 
-    appendMessage({ speaker, kind, body })
+    appendMessage({ speaker, kind, target, body })
 
     if (isSyncOrUpdate(kind, body)) {
       const snapshot = currentPcSnapshot(kind === 'sync' ? 'sync' : 'update')

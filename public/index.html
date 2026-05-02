@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>JH Agent Room</title>
-  <link rel="stylesheet" href="/styles.css?v=20260502-002">
+  <link rel="stylesheet" href="/styles.css?v=20260502-003">
 </head>
 <body>
   <header class="topbar">
@@ -45,8 +45,8 @@
     <section class="chat-panel">
       <div class="chat-header">
         <div>
-          <h2>공유 채팅방</h2>
-          <p>사용자 지시, Claude 구현, Codex 검수를 한 흐름에서 확인합니다.</p>
+          <h2>에이전트 채팅방</h2>
+          <p>한 화면에서 사용자 지시, Claude 구현, Codex 검수를 보고 지시 대상을 선택합니다.</p>
         </div>
                 <div class="chat-actions">
           <label class="toggle"><input id="auto-refresh" type="checkbox" checked> 자동 새로고침</label>
@@ -65,27 +65,48 @@
         <input id="search" class="search" type="search" placeholder="메시지 검색" autocomplete="off">
       </div>
 
-      <div id="messages" class="messages" aria-live="polite"></div>
+      <div class="workspace">
+        <div id="messages" class="messages" aria-live="polite"></div>
+        <aside class="conversation-panel">
+          <div class="conversation-card">
+            <h3>대상 지시</h3>
+            <p id="target-summary" class="storage-label">현재 지시 대상: 공유 지시</p>
+            <div class="target-picker" aria-label="지시 대상 선택">
+              <button class="target-chip active" type="button" data-target="room">공유 지시</button>
+              <button class="target-chip" type="button" data-target="claude">Claude</button>
+              <button class="target-chip" type="button" data-target="codex">Codex</button>
+            </div>
+            <p class="helper-text">사용자 지시는 선택한 대상에게 전달되는 기준 로그로 남습니다.</p>
+          </div>
+          <div id="detail" class="detail-card empty">
+            <strong>선택된 메시지 없음</strong>
+            <p>메시지를 선택하면 전체 작업 내용과 지시 대상을 확인할 수 있습니다.</p>
+          </div>
+        </aside>
+      </div>
 
       <form id="message-form" class="composer">
-        <select id="kind" aria-label="메시지 유형">
-          <option value="direction">지시</option>
-          <option value="sync">동기화</option>
-          <option value="review">검수 요청</option>
-          <option value="implementation">구현 메모</option>
-        </select>
-        <textarea id="body" placeholder="작업 목적, 대상 파일, 원하는 결과를 입력하세요"></textarea>
+        <div class="composer-meta">
+          <select id="kind" aria-label="메시지 유형">
+            <option value="direction">지시</option>
+            <option value="sync">동기화</option>
+            <option value="review">검수 요청</option>
+            <option value="implementation">구현 메모</option>
+          </select>
+          <p class="helper-text">`Ctrl+Enter`로 바로 전송</p>
+        </div>
+        <textarea id="body" placeholder="작업 목적, 대상 파일, 기대 결과, 역할 분담을 입력하세요"></textarea>
         <button type="submit">전송</button>
       </form>
       <p id="error" class="error" hidden></p>
     </section>
 
     <aside class="panel detail-panel">
-      <h2>작업 상세</h2>
-      <div id="detail" class="detail-card empty">
-        <strong>선택된 메시지 없음</strong>
-        <p>메시지를 선택하면 전체 작업 내용을 확인할 수 있습니다.</p>
-      </div>
+      <h2>운영 패널</h2>
+      <div class="store-card"><strong>GitHub</strong><span>코드 · 버전관리</span></div>
+      <div class="store-card"><strong>Google Drive</strong><span>자료 · 공유 문서</span></div>
+      <div class="store-card"><strong>Obsidian Vault</strong><span>지식 · 설계 결정</span></div>
+      <div class="store-card"><strong>JH-SHARED</strong><span>Claude/Codex 공유 시스템 정보</span></div>
 
       <h2 class="section-title">기준 파일 상태</h2>
       <div id="targets" class="targets"></div>
@@ -103,7 +124,7 @@
     </aside>
   </main>
 
-  <script src="/app.js?v=20260502-002"></script>
+  <script src="/app.js?v=20260502-003"></script>
 </body>
 </html>
 

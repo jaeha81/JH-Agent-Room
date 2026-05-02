@@ -36,7 +36,7 @@ h1 { margin: 0; font-size: 26px; letter-spacing: 0; }
 
 .layout {
   display: grid;
-  grid-template-columns: 230px minmax(560px, 1fr) 380px;
+  grid-template-columns: 190px minmax(760px, 1fr) 290px;
   gap: 14px;
   height: calc(100vh - 86px);
   max-width: none;
@@ -84,17 +84,26 @@ button, select, input { height: 44px; }
 button { background: var(--green); color: white; font-weight: 800; padding: 0 16px; cursor: pointer; }
 button:hover { background: #145f39; }
 
-.messages { flex: 1; overflow: auto; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 12px;
+  min-height: 0;
+  flex: 1;
+  padding: 12px 12px 0;
+}
+.messages { min-height: 0; overflow: auto; padding: 6px; display: flex; flex-direction: column; gap: 12px; }
 .message { border: 1px solid var(--line); border-radius: 8px; padding: 13px; background: #f8faf8; cursor: pointer; }
 .message:focus, .message.active { outline: 2px solid var(--ink); outline-offset: 2px; }
 .message.user { background: #edf8f1; border-color: #c7ead4; }
 .message.claude { background: #fff6e8; border-color: #f1d6a8; }
 .message.codex { background: #edf7fc; border-color: #c8e4f2; }
 .message-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; font-size: 12px; color: var(--muted); }
+.message-meta { margin-bottom: 8px; color: var(--green); font-size: 12px; font-weight: 800; }
 .badge { font-weight: 900; color: var(--ink); }
 .message p { margin: 0; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
 
-.composer { display: grid; grid-template-columns: 140px minmax(0, 1fr) 92px; align-items: stretch; gap: 10px; padding: 14px 16px; border-top: 1px solid var(--line); background: #f8faf8; }
+.composer { display: grid; grid-template-columns: 170px minmax(0, 1fr) 92px; align-items: stretch; gap: 10px; padding: 14px 16px; border-top: 1px solid var(--line); background: #f8faf8; }
 select, input, textarea { background: white; color: var(--ink); padding: 0 12px; }
 textarea {
   min-height: 76px;
@@ -104,6 +113,20 @@ textarea {
   line-height: 1.5;
 }
 .composer select, .composer button { height: 76px; }
+.composer-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.composer-meta select {
+  height: 48px;
+}
+.helper-text {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
 .error { margin: 0 18px 18px; color: var(--red); font-weight: 700; }
 
 .target { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -118,6 +141,7 @@ textarea {
   .layout { grid-template-columns: 1fr; height: auto; overflow: visible; }
   .topbar { flex-direction: column; }
   .chat-panel { min-height: 72vh; }
+  .workspace { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
   .topbar, .layout { padding: 16px; }
@@ -221,12 +245,47 @@ textarea {
 }
 
 .detail-panel { display: flex; flex-direction: column; }
-.detail-card {
-  margin-top: 12px;
+.conversation-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+.conversation-card {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #f8faf8;
   padding: 12px;
+}
+.conversation-card h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+.target-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 8px;
+}
+.target-chip {
+  height: 38px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  padding: 0 14px;
+}
+.target-chip.active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+.detail-card {
+  margin-top: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8faf8;
+  padding: 12px;
+  min-height: 0;
 }
 .detail-card.user { background: #edf8f1; border-color: #c7ead4; }
 .detail-card.claude { background: #fff6e8; border-color: #f1d6a8; }
@@ -240,8 +299,14 @@ textarea {
   color: var(--muted);
   font-size: 12px;
 }
+.detail-target {
+  margin: 0 0 10px;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 800;
+}
 .detail-card pre {
-  max-height: 42vh;
+  max-height: 48vh;
   overflow: auto;
   margin: 0;
   white-space: pre-wrap;
