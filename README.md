@@ -100,6 +100,8 @@ Agent Room의 코드, 스크립트, README, 운영 문서가 바뀐 경우에는
 - 민감정보가 담긴 `.env`와 로컬 로그 파일은 커밋하지 않습니다.
 - 검증된 변경만 커밋하고 `git push origin main`으로 반영합니다.
 - Agent Room 화면의 `동기화` 버튼은 GitHub push가 아니라 공유 로그 기록입니다.
+- Claude가 Agent Room 작업 중 코드를 수정한 경우, Codex가 최종 검수한 뒤 커밋/푸쉬 여부를 판단합니다.
+- Codex는 Agent Room 세션 종료 또는 사용자 종료 요청 시 `git status`를 확인하고, 푸쉬해야 할 검증된 코드 변경이 있으면 GitHub 반영까지 진행합니다.
 
 수동 반영:
 
@@ -112,6 +114,22 @@ git push origin main
 ```
 
 Codex나 Claude가 Agent Room 코드를 수정한 경우에는 사용자에게 별도 요청이 없어도 검증 후 GitHub 반영 여부를 보고하고, 승인된 운영 범위에서는 커밋/푸쉬까지 진행합니다.
+
+종료 전 Codex 확인:
+
+```powershell
+cd C:\ai프로젝트\JH-Agent-Room
+git status
+npm run dev
+git log -1 --oneline
+```
+
+확인 기준:
+
+- 변경 파일이 코드/스크립트/문서인지 확인합니다.
+- `.env`, 메시지 JSONL, 로컬 로그는 제외합니다.
+- 실행 확인 후 필요한 경우 커밋하고 `git push origin main`을 수행합니다.
+- 푸쉬 완료 후 커밋 해시와 남은 변경 여부를 사용자에게 보고합니다.
 
 ## 3대 PC 동기화 규칙
 
@@ -178,9 +196,11 @@ Agent Room을 통한 Claude 작업은 사용자에게 최종 전달되기 전에
 
 1. 사용자 지시
 2. Claude 구현 또는 보고 초안
-3. Codex 독립 검수
-4. Codex 검수 결과 기록
-5. 사용자 최종 보고
+3. Claude가 코드를 건드린 경우 변경 파일과 실행 결과를 Agent Room에 남김
+4. Codex 독립 검수
+5. Codex가 필요 시 커밋/푸쉬 대상 여부 확인
+6. Codex 검수 결과 기록
+7. 사용자 최종 보고
 
 Claude는 Codex 검수 없이 완료 보고를 확정하지 않습니다.
 ## 일일보고 운영
