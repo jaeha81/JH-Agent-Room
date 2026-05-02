@@ -15,6 +15,12 @@ const agentEnabledEl = document.querySelector('#agent-enabled')
 const searchEl = document.querySelector('#search')
 const detailEl = document.querySelector('#detail')
 const targetSummaryEl = document.querySelector('#target-summary')
+const queueRoomEl = document.querySelector('#queue-room')
+const queueClaudeEl = document.querySelector('#queue-claude')
+const queueCodexEl = document.querySelector('#queue-codex')
+const queueCountRoomEl = document.querySelector('#queue-count-room')
+const queueCountClaudeEl = document.querySelector('#queue-count-claude')
+const queueCountCodexEl = document.querySelector('#queue-count-codex')
 const targetButtons = Array.from(document.querySelectorAll('[data-target]'))
 const filterButtons = Array.from(document.querySelectorAll('[data-filter]'))
 
@@ -168,8 +174,48 @@ function renderTargets(targets) {
   }
 }
 
+function renderQueueList(container, countEl, messages) {
+  container.innerHTML = ''
+  countEl.textContent = String(messages.length)
+
+  if (messages.length === 0) {
+    const empty = document.createElement('div')
+    empty.className = 'queue-empty'
+    empty.textContent = '대기 중인 지시 없음'
+    container.appendChild(empty)
+    return
+  }
+
+  for (const message of messages.slice(-4).reverse()) {
+    const item = document.createElement('button')
+    item.type = 'button'
+    item.className = 'queue-item'
+    item.innerHTML = `
+      <span class="queue-time">${formatTimestamp(message.createdAt)}</span>
+      <span class="queue-text"></span>
+    `
+    item.querySelector('.queue-text').textContent = message.body
+    item.addEventListener('click', () => {
+      activeMessageId = message.id
+      currentFilter = 'user'
+      for (const button of filterButtons) button.classList.toggle('active', button.dataset.filter === 'user')
+      selectMessage(message)
+      renderMessages(currentMessages)
+    })
+    container.appendChild(item)
+  }
+}
+
+function renderQueues(messages) {
+  const userMessages = messages.filter((message) => message.speaker === 'user')
+  renderQueueList(queueRoomEl, queueCountRoomEl, userMessages.filter((message) => (message.target || 'room') === 'room'))
+  renderQueueList(queueClaudeEl, queueCountClaudeEl, userMessages.filter((message) => message.target === 'claude'))
+  renderQueueList(queueCodexEl, queueCountCodexEl, userMessages.filter((message) => message.target === 'codex'))
+}
+
 function renderPayload(payload) {
   renderMessages(payload.messages)
+  renderQueues(payload.messages)
   renderTargets(payload.syncTargets)
   storageEl.textContent = `저장소: ${payload.storage}`
   syncStateEl.textContent = `동기화 기록: ${payload.syncState || 'JH-SHARED / 03_LOGS / sync-state.jsonl'}`

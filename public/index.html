@@ -78,6 +78,32 @@
             </div>
             <p class="helper-text">사용자 지시는 선택한 대상에게 전달되는 기준 로그로 남습니다.</p>
           </div>
+          <div class="conversation-card">
+            <h3>작업 큐</h3>
+            <div class="queue-grid">
+              <section>
+                <div class="queue-head">
+                  <strong>공유 지시</strong>
+                  <span id="queue-count-room" class="queue-count">0</span>
+                </div>
+                <div id="queue-room" class="queue-list"></div>
+              </section>
+              <section>
+                <div class="queue-head">
+                  <strong>Claude 할 일</strong>
+                  <span id="queue-count-claude" class="queue-count">0</span>
+                </div>
+                <div id="queue-claude" class="queue-list"></div>
+              </section>
+              <section>
+                <div class="queue-head">
+                  <strong>Codex 할 일</strong>
+                  <span id="queue-count-codex" class="queue-count">0</span>
+                </div>
+                <div id="queue-codex" class="queue-list"></div>
+              </section>
+            </div>
+          </div>
           <div id="detail" class="detail-card empty">
             <strong>선택된 메시지 없음</strong>
             <p>메시지를 선택하면 전체 작업 내용과 지시 대상을 확인할 수 있습니다.</p>
