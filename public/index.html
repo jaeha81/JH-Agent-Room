@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>JH Agent Room</title>
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/styles.css?v=20260502-002">
 </head>
 <body>
   <header class="topbar">
@@ -20,7 +20,7 @@
   </header>
 
   <main class="layout">
-    <aside class="panel">
+    <aside class="panel side-panel">
       <h2>역할 분담</h2>
       <div class="role user"><strong>사용자</strong><span>방향 · 지시 · 승인</span><b id="count-user">0</b></div>
       <div class="role claude"><strong>Claude</strong><span>구현 · 운영 총괄</span><b id="count-claude">0</b></div>
@@ -46,7 +46,7 @@
       <div class="chat-header">
         <div>
           <h2>공유 채팅방</h2>
-          <p>사용자는 이 입력창으로 지시를 남기고, Claude/Codex는 오른쪽 명령으로 자기 역할 로그를 남깁니다.</p>
+          <p>사용자 지시, Claude 구현, Codex 검수를 한 흐름에서 확인합니다.</p>
         </div>
                 <div class="chat-actions">
           <label class="toggle"><input id="auto-refresh" type="checkbox" checked> 자동 새로고침</label>
@@ -57,11 +57,12 @@
         </div>
       </div>
 
-            <div class="filters" aria-label="메시지 필터">
+      <div class="filters" aria-label="메시지 필터">
         <button class="filter active" type="button" data-filter="all">전체</button>
         <button class="filter" type="button" data-filter="user">사용자</button>
         <button class="filter" type="button" data-filter="claude">Claude</button>
         <button class="filter" type="button" data-filter="codex">Codex</button>
+        <input id="search" class="search" type="search" placeholder="메시지 검색" autocomplete="off">
       </div>
 
       <div id="messages" class="messages" aria-live="polite"></div>
@@ -73,18 +74,18 @@
           <option value="review">검수 요청</option>
           <option value="implementation">구현 메모</option>
         </select>
-        <input id="body" type="text" placeholder="사용자 지시나 동기화 요청을 입력하세요" autocomplete="off">
+        <textarea id="body" placeholder="작업 목적, 대상 파일, 원하는 결과를 입력하세요"></textarea>
         <button type="submit">전송</button>
       </form>
       <p id="error" class="error" hidden></p>
     </section>
 
-    <aside class="panel">
-      <h2>시스템 저장소</h2>
-      <div class="store-card"><strong>GitHub</strong><span>코드 · 버전관리</span></div>
-      <div class="store-card"><strong>Google Drive</strong><span>자료 · 공유 문서</span></div>
-      <div class="store-card"><strong>Obsidian Vault</strong><span>지식 · 설계 결정</span></div>
-      <div class="store-card"><strong>JH-SHARED</strong><span>Claude/Codex 공유 시스템 정보</span></div>
+    <aside class="panel detail-panel">
+      <h2>작업 상세</h2>
+      <div id="detail" class="detail-card empty">
+        <strong>선택된 메시지 없음</strong>
+        <p>메시지를 선택하면 전체 작업 내용을 확인할 수 있습니다.</p>
+      </div>
 
       <h2 class="section-title">기준 파일 상태</h2>
       <div id="targets" class="targets"></div>
@@ -102,7 +103,7 @@
     </aside>
   </main>
 
-  <script src="/app.js"></script>
+  <script src="/app.js?v=20260502-002"></script>
 </body>
 </html>
 

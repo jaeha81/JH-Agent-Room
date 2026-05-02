@@ -186,7 +186,10 @@ function sendFile(res, filePath) {
       res.end('Not found')
       return
     }
-    res.writeHead(200, { 'Content-Type': type })
+    res.writeHead(200, {
+      'Content-Type': type,
+      'Cache-Control': 'no-cache, must-revalidate',
+    })
     res.end(data)
   })
 }

@@ -12,6 +12,8 @@ const autoRefreshEl = document.querySelector('#auto-refresh')
 const storageEl = document.querySelector('#storage')
 const syncStateEl = document.querySelector('#sync-state')
 const agentEnabledEl = document.querySelector('#agent-enabled')
+const searchEl = document.querySelector('#search')
+const detailEl = document.querySelector('#detail')
 const filterButtons = Array.from(document.querySelectorAll('[data-filter]'))
 
 const labels = {
@@ -27,6 +29,7 @@ const labels = {
 let currentMessages = []
 let currentFilter = 'all'
 let refreshTimer = null
+let activeMessageId = null
 
 function formatTimestamp(value) {
   return new Intl.DateTimeFormat('ko-KR', {
@@ -45,8 +48,37 @@ function setError(message) {
 }
 
 function visibleMessages() {
-  if (currentFilter === 'all') return currentMessages
-  return currentMessages.filter((message) => message.speaker === currentFilter)
+  const query = searchEl.value.trim().toLowerCase()
+  return currentMessages.filter((message) => {
+    const speakerMatches = currentFilter === 'all' || message.speaker === currentFilter
+    if (!speakerMatches) return false
+    if (!query) return true
+    return [
+      labels[message.speaker],
+      labels[message.kind],
+      message.body,
+      formatTimestamp(message.createdAt),
+    ].join(' ').toLowerCase().includes(query)
+  })
+}
+
+function selectMessage(message) {
+  activeMessageId = message ? message.id : null
+  if (!message) {
+    detailEl.className = 'detail-card empty'
+    detailEl.innerHTML = '<strong>선택된 메시지 없음</strong><p>메시지를 선택하면 전체 작업 내용을 확인할 수 있습니다.</p>'
+    return
+  }
+
+  detailEl.className = `detail-card ${message.speaker}`
+  detailEl.innerHTML = `
+    <div class="detail-head">
+      <span><span class="badge">${labels[message.speaker]}</span> · ${labels[message.kind]}</span>
+      <time datetime="${message.createdAt}">${formatTimestamp(message.createdAt)}</time>
+    </div>
+    <pre></pre>
+  `
+  detailEl.querySelector('pre').textContent = message.body
 }
 
 function renderMessages(messages) {
@@ -58,9 +90,15 @@ function renderMessages(messages) {
     counts[message.speaker] += 1
   }
 
-  for (const message of visibleMessages()) {
+  const shownMessages = visibleMessages()
+  if (!activeMessageId && shownMessages.length > 0) {
+    activeMessageId = shownMessages[shownMessages.length - 1].id
+  }
+
+  for (const message of shownMessages) {
     const item = document.createElement('article')
-    item.className = `message ${message.speaker}`
+    item.className = `message ${message.speaker}${message.id === activeMessageId ? ' active' : ''}`
+    item.tabIndex = 0
     item.innerHTML = `
       <div class="message-head">
         <span><span class="badge">${labels[message.speaker]}</span> · ${labels[message.kind]}</span>
@@ -69,10 +107,24 @@ function renderMessages(messages) {
       <p></p>
     `
     item.querySelector('p').textContent = message.body
+    item.addEventListener('click', () => {
+      selectMessage(message)
+      renderMessages(currentMessages)
+    })
+    item.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault()
+        selectMessage(message)
+        renderMessages(currentMessages)
+      }
+    })
     messagesEl.appendChild(item)
   }
 
-  if (visibleMessages().length === 0) {
+  const selectedMessage = currentMessages.find((message) => message.id === activeMessageId)
+  selectMessage(selectedMessage || shownMessages.at(-1) || null)
+
+  if (shownMessages.length === 0) {
     const empty = document.createElement('div')
     empty.className = 'empty-state'
     empty.textContent = '표시할 메시지가 없습니다.'
@@ -164,6 +216,12 @@ form.addEventListener('submit', async (event) => {
   }
 })
 
+bodyEl.addEventListener('keydown', (event) => {
+  if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+    form.requestSubmit()
+  }
+})
+
 refreshEl.addEventListener('click', () => {
   loadRoom().catch((error) => setError(error.message))
 })
@@ -178,6 +236,7 @@ quickUpdateEl.addEventListener('click', () => {
 
 exportLogEl.addEventListener('click', exportLog)
 autoRefreshEl.addEventListener('change', scheduleAutoRefresh)
+searchEl.addEventListener('input', () => renderMessages(currentMessages))
 
 for (const button of filterButtons) {
   button.addEventListener('click', () => {
