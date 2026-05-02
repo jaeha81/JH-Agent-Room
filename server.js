@@ -20,7 +20,7 @@ loadEnvFile()
 
 const PORT = Number(process.env.PORT || 3100)
 const SHARED_DIR = process.env.AGENT_ROOM_SHARED_DIR || 'G:\\내 드라이브\\JH-SHARED'
-const OBSIDIAN_VAULT_DIR = process.env.OBSIDIAN_VAULT_DIR || 'C:\\Users\\user1\\Documents\\Obsidian Vault'
+const OBSIDIAN_VAULT_DIR = process.env.OBSIDIAN_VAULT_DIR || 'G:\\내 드라이브\\OBSIDIAN-SECOND'
 const SYSTEM_DIR = path.join(SHARED_DIR, '00_SYSTEM')
 const AGENT_ROOM_DIR = path.join(SHARED_DIR, '01_AGENT_ROOM')
 const LOGS_DIR = path.join(SHARED_DIR, '03_LOGS')
