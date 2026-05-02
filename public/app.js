@@ -28,8 +28,15 @@ let currentMessages = []
 let currentFilter = 'all'
 let refreshTimer = null
 
-function formatTime(value) {
-  return new Intl.DateTimeFormat('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value))
+function formatTimestamp(value) {
+  return new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date(value))
 }
 
 function setError(message) {
@@ -57,7 +64,7 @@ function renderMessages(messages) {
     item.innerHTML = `
       <div class="message-head">
         <span><span class="badge">${labels[message.speaker]}</span> · ${labels[message.kind]}</span>
-        <time>${formatTime(message.createdAt)}</time>
+        <time datetime="${message.createdAt}">${formatTimestamp(message.createdAt)}</time>
       </div>
       <p></p>
     `
