@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>JH Agent Room</title>
-  <link rel="stylesheet" href="/styles.css?v=20260502-003">
+  <link rel="stylesheet" href="/styles.css?v=20260502-004">
 </head>
 <body>
   <header class="topbar">
@@ -79,6 +79,15 @@
             <p class="helper-text">사용자 지시는 선택한 대상에게 전달되는 기준 로그로 남습니다.</p>
           </div>
           <div class="conversation-card">
+            <h3>빠른 선언</h3>
+            <div class="template-actions">
+              <button class="template-button" type="button" data-template="claude-start">Claude 시작 요청</button>
+              <button class="template-button" type="button" data-template="codex-review">Codex 검수 요청</button>
+              <button class="template-button" type="button" data-template="shared-plan">공유 계획 정리</button>
+            </div>
+            <p class="helper-text">버튼을 누르면 대상, 유형, 기본 문구가 입력창에 채워집니다.</p>
+          </div>
+          <div class="conversation-card">
             <h3>작업 큐</h3>
             <div class="queue-grid">
               <section>
@@ -107,6 +116,16 @@
           <div id="detail" class="detail-card empty">
             <strong>선택된 메시지 없음</strong>
             <p>메시지를 선택하면 전체 작업 내용과 지시 대상을 확인할 수 있습니다.</p>
+          </div>
+          <div class="conversation-card">
+            <h3>상태 변경</h3>
+            <div class="status-actions">
+              <button class="status-chip" type="button" data-status="todo">대기</button>
+              <button class="status-chip" type="button" data-status="working">진행중</button>
+              <button class="status-chip" type="button" data-status="review">검수중</button>
+              <button class="status-chip" type="button" data-status="done">완료</button>
+            </div>
+            <p id="status-summary" class="helper-text">사용자 지시를 선택하면 상태를 변경할 수 있습니다.</p>
           </div>
         </aside>
       </div>
@@ -150,7 +169,7 @@
     </aside>
   </main>
 
-  <script src="/app.js?v=20260502-003"></script>
+  <script src="/app.js?v=20260502-004"></script>
 </body>
 </html>
 

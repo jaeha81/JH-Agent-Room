@@ -323,6 +323,34 @@ textarea {
   color: var(--muted);
   font-size: 12px;
 }
+.template-actions,
+.status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 8px;
+}
+.template-button,
+.status-chip {
+  height: 36px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  padding: 0 12px;
+}
+.template-button:hover,
+.status-chip:hover {
+  background: #f2f8f3;
+}
+.status-chip.active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+.status-chip:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
 .target-picker {
   display: flex;
   flex-wrap: wrap;
@@ -364,6 +392,12 @@ textarea {
 .detail-target {
   margin: 0 0 10px;
   color: var(--green);
+  font-size: 12px;
+  font-weight: 800;
+}
+.detail-status {
+  margin: 0 0 10px;
+  color: var(--blue);
   font-size: 12px;
   font-weight: 800;
 }

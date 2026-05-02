@@ -70,12 +70,18 @@ function normalizeTarget(speaker, target) {
   return ['room', 'claude', 'codex'].includes(target) ? target : 'room'
 }
 
-function appendMessage({ speaker, kind, body, target = 'room', createdAt = new Date().toISOString() }) {
+function normalizeStatus(speaker, status) {
+  if (speaker !== 'user') return 'logged'
+  return ['todo', 'working', 'review', 'done'].includes(status) ? status : 'todo'
+}
+
+function appendMessage({ speaker, kind, body, target = 'room', status = 'todo', createdAt = new Date().toISOString() }) {
   const message = {
     id: crypto.randomUUID(),
     speaker,
     kind,
     target: normalizeTarget(speaker, target),
+    status: normalizeStatus(speaker, status),
     body,
     createdAt,
   }
@@ -96,6 +102,21 @@ function readJsonLines(file) {
 function readMessages() {
   ensureStore()
   return readJsonLines(LOG_FILE).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+}
+
+function writeJsonLines(file, rows) {
+  const data = rows.map((row) => JSON.stringify(row)).join('\n')
+  fs.writeFileSync(file, data ? `${data}\n` : '', 'utf8')
+}
+
+function updateMessageStatus(id, status) {
+  const rows = readJsonLines(LOG_FILE)
+  const index = rows.findIndex((row) => row.id === id)
+  if (index === -1) return false
+  if (rows[index].speaker !== 'user') return false
+  rows[index].status = normalizeStatus('user', status)
+  writeJsonLines(LOG_FILE, rows)
+  return true
 }
 
 function statusSnapshot() {
@@ -237,11 +258,28 @@ async function handleMessagePost(req, res) {
   }
 }
 
+async function handleStatusPost(req, res) {
+  try {
+    const input = JSON.parse(await readBody(req))
+    const id = typeof input.id === 'string' ? input.id.trim() : ''
+    const status = typeof input.status === 'string' ? input.status.trim() : ''
+
+    if (!id) return sendJson(res, 400, { error: 'id is required' })
+    if (!['todo', 'working', 'review', 'done'].includes(status)) return sendJson(res, 400, { error: 'invalid status' })
+    if (!updateMessageStatus(id, status)) return sendJson(res, 404, { error: 'message not found' })
+
+    sendJson(res, 200, safePayload())
+  } catch (error) {
+    sendJson(res, 400, { error: error.message || 'Invalid request' })
+  }
+}
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`)
 
   if (url.pathname === '/api/messages' && req.method === 'GET') return sendJson(res, 200, safePayload())
   if (url.pathname === '/api/messages' && req.method === 'POST') return void handleMessagePost(req, res)
+  if (url.pathname === '/api/messages/status' && req.method === 'POST') return void handleStatusPost(req, res)
   if (url.pathname === '/api/status' && req.method === 'GET') return sendJson(res, 200, safePayload())
 
   const filePath = url.pathname === '/' ? path.join(PUBLIC_DIR, 'index.html') : path.normalize(path.join(PUBLIC_DIR, url.pathname))

@@ -15,6 +15,7 @@ const agentEnabledEl = document.querySelector('#agent-enabled')
 const searchEl = document.querySelector('#search')
 const detailEl = document.querySelector('#detail')
 const targetSummaryEl = document.querySelector('#target-summary')
+const statusSummaryEl = document.querySelector('#status-summary')
 const queueRoomEl = document.querySelector('#queue-room')
 const queueClaudeEl = document.querySelector('#queue-claude')
 const queueCodexEl = document.querySelector('#queue-codex')
@@ -22,6 +23,8 @@ const queueCountRoomEl = document.querySelector('#queue-count-room')
 const queueCountClaudeEl = document.querySelector('#queue-count-claude')
 const queueCountCodexEl = document.querySelector('#queue-count-codex')
 const targetButtons = Array.from(document.querySelectorAll('[data-target]'))
+const templateButtons = Array.from(document.querySelectorAll('[data-template]'))
+const statusButtons = Array.from(document.querySelectorAll('[data-status]'))
 const filterButtons = Array.from(document.querySelectorAll('[data-filter]'))
 
 const labels = {
@@ -35,11 +38,36 @@ const labels = {
   room: '공유 지시',
 }
 
+const statusLabels = {
+  todo: '대기',
+  working: '진행중',
+  review: '검수중',
+  done: '완료',
+}
+
 let currentMessages = []
 let currentFilter = 'all'
 let refreshTimer = null
 let activeMessageId = null
 let currentTarget = 'room'
+
+const templates = {
+  'claude-start': {
+    target: 'claude',
+    kind: 'direction',
+    body: '작업 목적:\n대상 저장소/폴더:\n수정 예정 파일:\n기대 결과:\n작업 시작 전 잠금 확인:',
+  },
+  'codex-review': {
+    target: 'codex',
+    kind: 'review',
+    body: '검수 대상 작업:\n검수 범위:\n확인할 파일/커밋:\n보고 형식:',
+  },
+  'shared-plan': {
+    target: 'room',
+    kind: 'direction',
+    body: '공유 작업 계획:\n1.\n2.\n3.\n역할 분담:\nClaude:\nCodex:',
+  },
+}
 
 function formatTimestamp(value) {
   return new Intl.DateTimeFormat('ko-KR', {
@@ -62,6 +90,17 @@ function updateTargetUI() {
     button.classList.toggle('active', button.dataset.target === currentTarget)
   }
   targetSummaryEl.textContent = `현재 지시 대상: ${labels[currentTarget]}`
+}
+
+function updateStatusUI(message) {
+  const activeStatus = message && message.speaker === 'user' ? (message.status || 'todo') : null
+  for (const button of statusButtons) {
+    button.classList.toggle('active', button.dataset.status === activeStatus)
+    button.disabled = !activeStatus
+  }
+  statusSummaryEl.textContent = activeStatus
+    ? `현재 상태: ${statusLabels[activeStatus]}`
+    : '사용자 지시를 선택하면 상태를 변경할 수 있습니다.'
 }
 
 function visibleMessages() {
@@ -88,6 +127,7 @@ function selectMessage(message) {
   }
 
   const targetLabel = message.speaker === 'user' ? labels[message.target || 'room'] : '채팅방 기록'
+  const statusLabel = message.speaker === 'user' ? statusLabels[message.status || 'todo'] : '기록'
   detailEl.className = `detail-card ${message.speaker}`
   detailEl.innerHTML = `
     <div class="detail-head">
@@ -95,9 +135,11 @@ function selectMessage(message) {
       <time datetime="${message.createdAt}">${formatTimestamp(message.createdAt)}</time>
     </div>
     <p class="detail-target">대상: ${targetLabel}</p>
+    <p class="detail-status">상태: ${statusLabel}</p>
     <pre></pre>
   `
   detailEl.querySelector('pre').textContent = message.body
+  updateStatusUI(message)
 }
 
 function renderMessages(messages) {
@@ -119,12 +161,13 @@ function renderMessages(messages) {
     item.className = `message ${message.speaker}${message.id === activeMessageId ? ' active' : ''}`
     item.tabIndex = 0
     const targetLabel = message.speaker === 'user' ? labels[message.target || 'room'] : labels[message.speaker]
+    const statusLabel = message.speaker === 'user' ? statusLabels[message.status || 'todo'] : null
     item.innerHTML = `
       <div class="message-head">
         <span><span class="badge">${labels[message.speaker]}</span> · ${labels[message.kind]}</span>
         <time datetime="${message.createdAt}">${formatTimestamp(message.createdAt)}</time>
       </div>
-      <div class="message-meta">${targetLabel}</div>
+      <div class="message-meta">${targetLabel}${statusLabel ? ` · ${statusLabel}` : ''}</div>
       <p></p>
     `
     item.querySelector('p').textContent = message.body
@@ -191,7 +234,7 @@ function renderQueueList(container, countEl, messages) {
     item.type = 'button'
     item.className = 'queue-item'
     item.innerHTML = `
-      <span class="queue-time">${formatTimestamp(message.createdAt)}</span>
+      <span class="queue-time">${formatTimestamp(message.createdAt)} · ${statusLabels[message.status || 'todo']}</span>
       <span class="queue-text"></span>
     `
     item.querySelector('.queue-text').textContent = message.body
@@ -207,7 +250,7 @@ function renderQueueList(container, countEl, messages) {
 }
 
 function renderQueues(messages) {
-  const userMessages = messages.filter((message) => message.speaker === 'user')
+  const userMessages = messages.filter((message) => message.speaker === 'user' && (message.status || 'todo') !== 'done')
   renderQueueList(queueRoomEl, queueCountRoomEl, userMessages.filter((message) => (message.target || 'room') === 'room'))
   renderQueueList(queueClaudeEl, queueCountClaudeEl, userMessages.filter((message) => message.target === 'claude'))
   renderQueueList(queueCodexEl, queueCountCodexEl, userMessages.filter((message) => message.target === 'codex'))
@@ -237,6 +280,17 @@ async function postUserMessage(kind, body) {
   })
   const payload = await response.json()
   if (!response.ok) throw new Error(payload.error || '메시지를 저장하지 못했습니다.')
+  renderPayload(payload)
+}
+
+async function updateMessageStatus(id, status) {
+  const response = await fetch('/api/messages/status', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, status }),
+  })
+  const payload = await response.json()
+  if (!response.ok) throw new Error(payload.error || '상태를 저장하지 못했습니다.')
   renderPayload(payload)
 }
 
@@ -283,6 +337,18 @@ bodyEl.addEventListener('keydown', (event) => {
   }
 })
 
+for (const button of templateButtons) {
+  button.addEventListener('click', () => {
+    const template = templates[button.dataset.template]
+    if (!template) return
+    currentTarget = template.target
+    kindEl.value = template.kind
+    bodyEl.value = template.body
+    updateTargetUI()
+    bodyEl.focus()
+  })
+}
+
 refreshEl.addEventListener('click', () => {
   loadRoom().catch((error) => setError(error.message))
 })
@@ -306,6 +372,19 @@ for (const button of targetButtons) {
   })
 }
 
+for (const button of statusButtons) {
+  button.addEventListener('click', async () => {
+    const selectedMessage = currentMessages.find((message) => message.id === activeMessageId)
+    if (!selectedMessage || selectedMessage.speaker !== 'user') return
+    try {
+      setError('')
+      await updateMessageStatus(selectedMessage.id, button.dataset.status)
+    } catch (error) {
+      setError(error.message)
+    }
+  })
+}
+
 for (const button of filterButtons) {
   button.addEventListener('click', () => {
     currentFilter = button.dataset.filter
@@ -315,4 +394,5 @@ for (const button of filterButtons) {
 }
 
 updateTargetUI()
+updateStatusUI(null)
 loadRoom().then(scheduleAutoRefresh).catch((error) => setError(error.message))
