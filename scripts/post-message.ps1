@@ -10,6 +10,19 @@
   [Parameter(Mandatory=$true)]
   [string]$Body,
 
+  [ValidateSet('room','both','gpt','claude','codex','harness','github','local')]
+  [string]$Target = 'room',
+
+  [ValidateSet('question','plan','implementation','review','harness','github','local','browser')]
+  [string]$TaskType = 'question',
+
+  [ValidateSet('todo','working','review','blocked','done')]
+  [string]$Status = 'todo',
+
+  [string]$LoopId = '',
+
+  [string]$ReplyTo = '',
+
   [string]$Url = 'http://localhost:3100/api/messages'
 )
 
@@ -36,8 +49,14 @@ if ($Speaker -ne 'user') {
 $Payload = @{
   speaker = $Speaker
   kind = $Kind
+  target = $Target
+  taskType = $TaskType
+  status = $Status
   body = $Body
-} | ConvertTo-Json -Compress
+}
+if ($LoopId) { $Payload.loopId = $LoopId }
+if ($ReplyTo) { $Payload.replyTo = $ReplyTo }
+$Payload = $Payload | ConvertTo-Json -Compress
 
 Invoke-RestMethod -Uri $Url -Method Post -ContentType 'application/json; charset=utf-8' -Headers $Headers -Body $Payload | Out-Null
 Write-Host "Posted $Speaker/$Kind message."

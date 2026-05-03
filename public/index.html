@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>JH Agent Room</title>
-  <link rel="stylesheet" href="/styles.css?v=20260502-004">
+  <link rel="stylesheet" href="/styles.css?v=20260503-router">
 </head>
 <body>
   <header class="topbar">
     <div>
       <p class="eyebrow">JH 통합 구축 시스템</p>
       <h1>JH Agent Room</h1>
-      <p class="subtitle">사용자, Claude, Codex가 같은 기준을 보고 지시·구현·검수를 분리하는 공유 대시보드</p>
+      <p class="subtitle">사용자, Claude, Codex가 같은 기준을 보고 공유·구현·검수 피드백을 연결하는 라우팅 대시보드</p>
     </div>
     <div class="status-pills">
       <span>기준: JH-SHARED</span>
@@ -22,7 +22,7 @@
   <main class="layout">
     <aside class="panel side-panel">
       <h2>역할 분담</h2>
-      <div class="role user"><strong>사용자</strong><span>방향 · 지시 · 승인</span><b id="count-user">0</b></div>
+      <div class="role user"><strong>사용자</strong><span>방향 · 공유 · 승인</span><b id="count-user">0</b></div>
       <div class="role claude"><strong>Claude</strong><span>구현 · 운영 총괄</span><b id="count-claude">0</b></div>
       <div class="role codex"><strong>Codex</strong><span>독립 검수 · 대표 직보</span><b id="count-codex">0</b></div>
 
@@ -30,7 +30,7 @@
       <ul class="checklist">
         <li>Claude 작업 결과는 사용자 전달 전 Codex 검수</li>
         <li>Codex 검수 결과는 Agent Room에 기록</li>
-        <li>수정 필요 시 사용자가 Claude에게 지시</li>
+        <li>수정 필요 시 같은 루프에 Claude와 공유</li>
       </ul>
 
       <h2 class="section-title">동기화 기준</h2>
@@ -46,7 +46,7 @@
       <div class="chat-header">
         <div>
           <h2>에이전트 채팅방</h2>
-          <p>한 화면에서 사용자 지시, Claude 구현, Codex 검수를 보고 지시 대상을 선택합니다.</p>
+          <p>한 화면에서 사용자 공유, Claude 구현, Codex 검수를 보고 라우팅 대상을 선택합니다.</p>
         </div>
                 <div class="chat-actions">
           <label class="toggle"><input id="auto-refresh" type="checkbox" checked> 자동 새로고침</label>
@@ -65,37 +65,66 @@
         <input id="search" class="search" type="search" placeholder="메시지 검색" autocomplete="off">
       </div>
 
+      <button id="recent-routing" class="recent-routing" type="button" hidden>
+        <span>새 라우팅</span>
+        <strong id="recent-routing-title"></strong>
+      </button>
+
       <div class="workspace">
         <div id="messages" class="messages" aria-live="polite"></div>
         <aside class="conversation-panel">
           <div class="conversation-card">
-            <h3>대상 지시</h3>
-            <p id="target-summary" class="storage-label">현재 지시 대상: 공유 지시</p>
-            <div class="target-picker" aria-label="지시 대상 선택">
-              <button class="target-chip active" type="button" data-target="room">공유 지시</button>
+            <h3>공유 라우팅</h3>
+            <p id="target-summary" class="storage-label">현재 공유 대상: Claude+Codex 공동</p>
+            <a id="target-open-link" class="target-open-link" href="http://127.0.0.1:3100" target="_blank" rel="noreferrer" hidden>대상 대시보드 열기</a>
+            <div class="target-picker" aria-label="공유 대상 선택">
+              <button class="target-chip" type="button" data-target="room">공유</button>
+              <button class="target-chip active" type="button" data-target="both">Claude+Codex</button>
+              <button class="target-chip" type="button" data-target="gpt">GPT 계획</button>
               <button class="target-chip" type="button" data-target="claude">Claude</button>
               <button class="target-chip" type="button" data-target="codex">Codex</button>
+              <button class="target-chip" type="button" data-target="harness">Harness 착수</button>
+              <button class="target-chip" type="button" data-target="github">Codex: GitHub</button>
+              <button class="target-chip" type="button" data-target="local">Codex: 로컬</button>
             </div>
-            <p class="helper-text">사용자 지시는 선택한 대상에게 전달되는 기준 로그로 남습니다.</p>
+            <p class="helper-text">대상 버튼은 즉시 실행이 아니라 작업 큐 분류입니다. 실행은 Claude/Codex가 큐를 읽고 수행합니다.</p>
           </div>
           <div class="conversation-card">
-            <h3>빠른 선언</h3>
+            <h3>전달용 프롬프트</h3>
             <div class="template-actions">
-              <button class="template-button" type="button" data-template="claude-start">Claude 시작 요청</button>
-              <button class="template-button" type="button" data-template="codex-review">Codex 검수 요청</button>
-              <button class="template-button" type="button" data-template="shared-plan">공유 계획 정리</button>
+              <button class="template-button" type="button" data-template="gpt-plan">GPT 계획</button>
+              <button class="template-button" type="button" data-template="claude-start">Claude 구현</button>
+              <button class="template-button" type="button" data-template="codex-review">Codex 검수</button>
+              <button class="template-button" type="button" data-template="harness-start">Harness 착수 템플릿</button>
+              <button class="template-button" type="button" data-template="github-status">Codex용 GitHub 확인</button>
+              <button class="template-button" type="button" data-template="local-task">Codex용 로컬 작업</button>
+              <button class="template-button" type="button" data-template="shared-plan">공동 답변</button>
             </div>
-            <p class="helper-text">버튼을 누르면 대상, 유형, 기본 문구가 입력창에 채워집니다.</p>
+            <p class="helper-text">버튼을 누르면 대상, 작업 유형, 기본 문구가 입력창에 채워집니다.</p>
           </div>
           <div class="conversation-card">
             <h3>작업 큐</h3>
             <div class="queue-grid">
               <section>
                 <div class="queue-head">
-                  <strong>공유 지시</strong>
+                  <strong>공유</strong>
                   <span id="queue-count-room" class="queue-count">0</span>
                 </div>
                 <div id="queue-room" class="queue-list"></div>
+              </section>
+              <section>
+                <div class="queue-head">
+                  <strong>공동 검토</strong>
+                  <span id="queue-count-both" class="queue-count">0</span>
+                </div>
+                <div id="queue-both" class="queue-list"></div>
+              </section>
+              <section>
+                <div class="queue-head">
+                  <strong>GPT 계획</strong>
+                  <span id="queue-count-gpt" class="queue-count">0</span>
+                </div>
+                <div id="queue-gpt" class="queue-list"></div>
               </section>
               <section>
                 <div class="queue-head">
@@ -111,11 +140,39 @@
                 </div>
                 <div id="queue-codex" class="queue-list"></div>
               </section>
+              <section>
+                <div class="queue-head">
+                  <strong>Harness 착수</strong>
+                  <span id="queue-count-harness" class="queue-count">0</span>
+                </div>
+                <div id="queue-harness" class="queue-list"></div>
+              </section>
+              <section>
+                <div class="queue-head">
+                  <strong>GitHub 확인</strong>
+                  <span id="queue-count-github" class="queue-count">0</span>
+                </div>
+                <div id="queue-github" class="queue-list"></div>
+              </section>
+              <section>
+                <div class="queue-head">
+                  <strong>로컬 작업</strong>
+                  <span id="queue-count-local" class="queue-count">0</span>
+                </div>
+                <div id="queue-local" class="queue-list"></div>
+              </section>
             </div>
+          </div>
+          <div class="conversation-card">
+            <div class="queue-head">
+              <h3>피드백 루프</h3>
+              <span id="loop-count" class="queue-count">0</span>
+            </div>
+            <div id="loop-list" class="loop-list"></div>
           </div>
           <div id="detail" class="detail-card empty">
             <strong>선택된 메시지 없음</strong>
-            <p>메시지를 선택하면 전체 작업 내용과 지시 대상을 확인할 수 있습니다.</p>
+            <p>메시지를 선택하면 전체 작업 내용과 공유 대상을 확인할 수 있습니다.</p>
           </div>
           <div class="conversation-card">
             <h3>상태 변경</h3>
@@ -123,9 +180,10 @@
               <button class="status-chip" type="button" data-status="todo">대기</button>
               <button class="status-chip" type="button" data-status="working">진행중</button>
               <button class="status-chip" type="button" data-status="review">검수중</button>
+              <button class="status-chip" type="button" data-status="blocked">막힘</button>
               <button class="status-chip" type="button" data-status="done">완료</button>
             </div>
-            <p id="status-summary" class="helper-text">사용자 지시를 선택하면 상태를 변경할 수 있습니다.</p>
+            <p id="status-summary" class="helper-text">공유 메시지를 선택하면 상태를 변경할 수 있습니다.</p>
           </div>
         </aside>
       </div>
@@ -133,10 +191,20 @@
       <form id="message-form" class="composer">
         <div class="composer-meta">
           <select id="kind" aria-label="메시지 유형">
-            <option value="direction">지시</option>
+            <option value="direction">공유</option>
             <option value="sync">동기화</option>
             <option value="review">검수 요청</option>
             <option value="implementation">구현 메모</option>
+          </select>
+          <select id="task-type" aria-label="작업 유형">
+            <option value="question">새 질문</option>
+            <option value="plan">개발 계획</option>
+            <option value="implementation">구현 공유</option>
+            <option value="review">검증 요청</option>
+            <option value="harness">하네스 착수</option>
+            <option value="github">GitHub 상태</option>
+            <option value="local">로컬 작업</option>
+            <option value="browser">브라우저/확장</option>
           </select>
           <p class="helper-text">`Ctrl+Enter`로 바로 전송</p>
         </div>
@@ -152,11 +220,15 @@
       <div class="store-card"><strong>Google Drive</strong><span>자료 · 공유 문서</span></div>
       <div class="store-card"><strong>Obsidian Vault</strong><span>지식 · 설계 결정</span></div>
       <div class="store-card"><strong>JH-SHARED</strong><span>Claude/Codex 공유 시스템 정보</span></div>
+      <a id="harness-dashboard-link" class="store-card store-link" href="http://127.0.0.1:3200" target="_blank" rel="noreferrer">
+        <strong>JH Harness</strong><span>개발 착수 분석 · 프롬프트 · 체크리스트</span>
+      </a>
 
       <h2 class="section-title">기준 파일 상태</h2>
       <div id="targets" class="targets"></div>
       <p id="storage" class="storage-label"></p>
       <p id="sync-state" class="storage-label"></p>
+      <p id="realtime-state" class="realtime-state is-polling">실시간 감지: 폴링 준비</p>
       <p id="agent-enabled" class="storage-label"></p>
 
       <h2 class="section-title">Claude/Codex 등록 명령</h2>
@@ -169,7 +241,7 @@
     </aside>
   </main>
 
-  <script src="/app.js?v=20260502-004"></script>
+  <script src="/app.js?v=20260503-loop-cleanup"></script>
 </body>
 </html>
 

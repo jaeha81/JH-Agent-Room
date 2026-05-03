@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JH Agent Room Share</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <strong>Agent Room Share</strong>
+        <span id="page-host">Current page</span>
+      </div>
+      <span id="connection-state" class="state is-checking">Checking</span>
+    </header>
+
+    <label>
+      Agent Room URL
+      <input id="base-url" type="url" value="http://127.0.0.1:3100" spellcheck="false">
+    </label>
+
+    <div class="grid">
+      <label>
+        Share Target
+        <select id="target">
+          <option value="both">Claude+Codex</option>
+          <option value="claude">Claude</option>
+          <option value="codex">Codex</option>
+          <option value="harness">Harness Dashboard</option>
+          <option value="github">Codex: GitHub</option>
+          <option value="local">Codex: Local</option>
+          <option value="room">Room</option>
+        </select>
+      </label>
+
+      <label>
+        Task Type
+        <select id="task-type">
+          <option value="browser">Browser/Extension</option>
+          <option value="question">Question</option>
+          <option value="plan">Development Plan</option>
+          <option value="implementation">Implementation Share</option>
+          <option value="review">Review Request</option>
+          <option value="harness">Harness Dashboard</option>
+          <option value="github">GitHub Status</option>
+          <option value="local">Local Work</option>
+        </select>
+      </label>
+    </div>
+
+    <label>
+      Open Feedback Loop
+      <select id="loop-select">
+        <option value="">Share as new loop</option>
+      </select>
+    </label>
+
+    <div class="grid">
+      <label>
+        Loop ID
+        <input id="loop-id" type="text" placeholder="Optional" spellcheck="false">
+      </label>
+
+      <label>
+        Reply To
+        <input id="reply-to" type="text" placeholder="Optional" spellcheck="false">
+      </label>
+    </div>
+
+    <label>
+      Share Memo
+      <textarea id="memo" rows="8" placeholder="Add what Claude and Codex should share about this page."></textarea>
+    </label>
+
+    <section class="page-box">
+      <div><b id="page-title">Reading title</b></div>
+      <div id="page-url"></div>
+      <div id="selection-preview"></div>
+    </section>
+
+    <div class="actions primary-actions">
+      <button id="send" type="button">Share to Room</button>
+      <button id="open-room" type="button">Open Room</button>
+    </div>
+
+    <div class="actions">
+      <button id="check-connection" type="button">Check</button>
+      <button id="copy-json" type="button">Copy JSON</button>
+      <button id="download-json" type="button">Save JSON</button>
+    </div>
+
+    <p id="status" role="status"></p>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>

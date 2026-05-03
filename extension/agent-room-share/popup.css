@@ -1,0 +1,166 @@
+:root {
+  color-scheme: light;
+  --ink: #173126;
+  --muted: #6b756f;
+  --line: #d9e1dc;
+  --green: #197342;
+  --blue: #25637c;
+  --red: #b42318;
+  --bg: #f6f8f6;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  width: 390px;
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 13px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+main {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+header div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+header strong { font-size: 16px; }
+header span { color: var(--muted); font-size: 12px; }
+
+.state {
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.state.is-connected {
+  border-color: #c7ead4;
+  background: #edf8f1;
+  color: var(--green);
+}
+
+.state.is-checking {
+  border-color: #c8e4f2;
+  background: #edf7fc;
+  color: var(--blue);
+}
+
+.state.is-offline {
+  border-color: #f0c7c3;
+  background: #fff2f0;
+  color: var(--red);
+}
+
+label {
+  display: grid;
+  gap: 5px;
+  font-weight: 800;
+}
+
+input,
+select,
+textarea,
+button {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+}
+
+input,
+select {
+  height: 38px;
+  min-width: 0;
+  padding: 0 10px;
+  background: #fff;
+}
+
+textarea {
+  min-height: 120px;
+  max-height: 220px;
+  resize: vertical;
+  padding: 10px;
+  background: #fff;
+}
+
+button {
+  height: 38px;
+  background: #fff;
+  color: var(--green);
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+button:hover { filter: brightness(0.97); }
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.page-box {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 10px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.page-box b {
+  color: var(--ink);
+}
+
+#selection-preview {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.primary-actions {
+  grid-template-columns: 1fr 1fr;
+}
+
+#send {
+  background: var(--green);
+  color: #fff;
+}
+
+#status {
+  min-height: 20px;
+  margin: 0;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+#status.ok { color: var(--green); }
+#status.error { color: var(--red); }
