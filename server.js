@@ -483,6 +483,7 @@ function queueTargetsFor(agent) {
   if (agent === 'claude') return ['both', 'claude', 'harness']
   if (agent === 'codex') return ['both', 'codex', 'github', 'local']
   if (agent === 'gpt') return ['gpt']
+  if (allowedTargets.includes(agent) && agent !== 'all') return [agent]
   return allowedTargets
 }
 
@@ -576,7 +577,7 @@ function handleLoopsGet(url, res) {
 
 function handleQueueGet(url, res) {
   const target = url.searchParams.get('target') || 'all'
-  if (!['all', 'claude', 'codex', 'gpt'].includes(target)) {
+  if (!['all', 'claude', 'codex', 'gpt', ...allowedTargets].includes(target)) {
     return sendJson(res, 400, { error: 'invalid target' })
   }
   sendJson(res, 200, {

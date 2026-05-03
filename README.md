@@ -62,6 +62,7 @@ G:\내 드라이브\JH-SHARED\01_AGENT_ROOM\agent-room-messages.jsonl
 - 메시지 필터: 전체, 사용자, Claude, Codex
 - 새 라우팅 배너와 메시지 카드 `새 공유` 강조
 - 메시지 카드 및 상세 패널에서 상태 변경: `todo`, `working`, `review`, `blocked`, `done`
+- 작업 보기: 전체 작업, Claude 큐, Codex 큐, 막힘
 - 빠른 동기화 버튼
 - 현재 로그 JSON 내보내기
 - 기준 파일 상태 확인
@@ -91,6 +92,7 @@ Agent Room은 한 화면 안의 채팅만을 전제로 하지 않습니다.
 ```powershell
 Invoke-RestMethod http://127.0.0.1:3100/api/queue?target=codex
 Invoke-RestMethod http://127.0.0.1:3100/api/queue?target=claude
+Invoke-RestMethod http://127.0.0.1:3100/api/queue?target=harness
 ```
 
 운영 스크립트:
@@ -104,6 +106,9 @@ powershell -ExecutionPolicy Bypass -File .\scripts\watch-queue.ps1 -Target codex
 
 # Claude 대기열 실시간 감시
 powershell -ExecutionPolicy Bypass -File .\scripts\watch-queue.ps1 -Target claude
+
+# Claude/Codex/Harness 라우팅 호환성 테스트
+powershell -ExecutionPolicy Bypass -File .\scripts\test-routing-compat.ps1
 
 # 공유 상태 변경
 powershell -ExecutionPolicy Bypass -File .\scripts\set-message-status.ps1 -Id "MESSAGE_ID" -Status working

@@ -65,6 +65,13 @@
         <input id="search" class="search" type="search" placeholder="메시지 검색" autocomplete="off">
       </div>
 
+      <div class="work-views" aria-label="작업 보기">
+        <button class="work-view active" type="button" data-work-view="all">전체 작업</button>
+        <button class="work-view" type="button" data-work-view="claude">Claude 큐</button>
+        <button class="work-view" type="button" data-work-view="codex">Codex 큐</button>
+        <button class="work-view" type="button" data-work-view="blocked">막힘</button>
+      </div>
+
       <button id="recent-routing" class="recent-routing" type="button" hidden>
         <span>새 라우팅</span>
         <strong id="recent-routing-title"></strong>
@@ -96,6 +103,7 @@
               <button class="template-button" type="button" data-template="claude-start">Claude 구현</button>
               <button class="template-button" type="button" data-template="codex-review">Codex 검수</button>
               <button class="template-button" type="button" data-template="harness-start">Harness 착수 템플릿</button>
+              <button class="template-button" type="button" data-template="harness-sync">Harness 연동 점검</button>
               <button class="template-button" type="button" data-template="github-status">Codex용 GitHub 확인</button>
               <button class="template-button" type="button" data-template="local-task">Codex용 로컬 작업</button>
               <button class="template-button" type="button" data-template="shared-plan">공동 답변</button>

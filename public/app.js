@@ -44,6 +44,7 @@ const targetButtons = Array.from(document.querySelectorAll('[data-target]'))
 const templateButtons = Array.from(document.querySelectorAll('[data-template]'))
 const statusButtons = Array.from(document.querySelectorAll('[data-status]'))
 const filterButtons = Array.from(document.querySelectorAll('[data-filter]'))
+const workViewButtons = Array.from(document.querySelectorAll('[data-work-view]'))
 
 const labels = {
   user: '사용자',
@@ -75,6 +76,7 @@ const statusLabels = {
 
 let currentMessages = []
 let currentFilter = 'all'
+let currentWorkView = 'all'
 let refreshTimer = null
 let activeMessageId = null
 let currentTarget = 'both'
@@ -84,6 +86,7 @@ let payloadInitialized = false
 let knownMessageIds = new Set()
 let highlightedMessageIds = new Set()
 let latestRoutedMessageId = null
+let pendingLoopLink = null
 
 const quickStatuses = ['todo', 'working', 'blocked', 'done']
 
@@ -111,6 +114,12 @@ const templates = {
     taskType: 'harness',
     kind: 'direction',
     body: 'Harness 착수 분석 요청:\n개발 제목:\n개발 목적:\n관련 자료/지침:\n필요 플래그: 테스트 / 장기작업 / UX / 보안\n원하는 산출물: Claude Code 프롬프트, Codex 체크리스트, LLM Wiki entry',
+  },
+  'harness-sync': {
+    target: 'harness',
+    taskType: 'harness',
+    kind: 'direction',
+    body: 'Harness 연동 점검 요청:\n확인 대상: Agent Room -> JH Harness 대시보드 연결\n확인할 내용: 하네스 대시보드 URL, 착수 템플릿, Claude 구현 큐 편입, Codex 검수 루프\n결과 공유: 같은 피드백 루프에 남기기',
   },
   'github-status': {
     target: 'github',
@@ -239,6 +248,14 @@ function updateStatusUI(message) {
     : '큐 메시지를 선택하면 상태를 변경할 수 있습니다.'
 }
 
+function workViewMatches(message) {
+  if (currentWorkView === 'all') return true
+  if (currentWorkView === 'blocked') return message.status === 'blocked'
+  if (currentWorkView === 'claude') return ['both', 'claude', 'harness'].includes(message.target || 'room') && message.speaker !== 'claude'
+  if (currentWorkView === 'codex') return ['both', 'codex', 'github', 'local'].includes(message.target || 'room') && message.speaker !== 'codex'
+  return true
+}
+
 function messageTitle(message) {
   return (message.body || '').split('\n').find(Boolean)?.slice(0, 90) || '새 공유'
 }
@@ -275,6 +292,35 @@ function renderRecentRouting() {
   recentRoutingTitleEl.textContent = `${labels[message.target || 'room'] || '공유'} · ${messageTitle(message)}`
 }
 
+function prepareBlockedFeedback(message) {
+  pendingLoopLink = {
+    loopId: message.loopId || message.id,
+    replyTo: message.id,
+  }
+  currentTarget = 'both'
+  kindEl.value = 'direction'
+  taskTypeEl.value = 'question'
+  bodyEl.value = [
+    '막힘 피드백 공유:',
+    `원본 루프: ${shortId(pendingLoopLink.loopId)}`,
+    `원본 메시지: ${shortId(message.id)}`,
+    `대상: ${labels[message.target || 'room'] || message.target}`,
+    `현재 상태: ${statusLabels.blocked}`,
+    '',
+    'Claude 확인:',
+    '- 구현/운영 관점에서 막힌 원인과 다음 실행안을 공유',
+    '',
+    'Codex 확인:',
+    '- 검증/리스크 관점에서 충돌, 누락, 회귀 가능성을 공유',
+    '',
+    '필요한 사용자 판단:',
+    '- ',
+  ].join('\n')
+  updateTargetUI()
+  bodyEl.focus()
+  setError('막힘 상태가 표시되었습니다. 입력창에 Claude/Codex 피드백 공유 문구를 준비했습니다.')
+}
+
 function createStatusActions(message) {
   const row = document.createElement('div')
   row.className = 'message-status-row'
@@ -291,6 +337,7 @@ function createStatusActions(message) {
       try {
         setError('')
         await updateMessageStatus(message.id, status)
+        if (status === 'blocked') prepareBlockedFeedback(message)
       } catch (error) {
         setError(error.message)
       }
@@ -306,6 +353,7 @@ function visibleMessages() {
   return currentMessages.filter((message) => {
     const speakerMatches = currentFilter === 'all' || message.speaker === currentFilter
     if (!speakerMatches) return false
+    if (!workViewMatches(message)) return false
     if (!query) return true
     return [
       labels[message.speaker],
@@ -453,8 +501,10 @@ function renderQueueList(container, countEl, messages) {
     item.querySelector('.queue-text').textContent = message.body
     item.addEventListener('click', () => {
       activeMessageId = message.id
-      currentFilter = 'user'
-      for (const button of filterButtons) button.classList.toggle('active', button.dataset.filter === 'user')
+      currentFilter = 'all'
+      currentWorkView = 'all'
+      for (const button of filterButtons) button.classList.toggle('active', button.dataset.filter === 'all')
+      for (const button of workViewButtons) button.classList.toggle('active', button.dataset.workView === 'all')
       selectMessage(message)
       renderMessages(currentMessages)
     })
@@ -571,10 +621,19 @@ function startEventStream() {
 }
 
 async function postUserMessage(kind, body) {
+  const loopLink = pendingLoopLink
+  pendingLoopLink = null
   const response = await fetch('/api/messages', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ speaker: 'user', kind, target: currentTarget, taskType: taskTypeEl.value, body }),
+    body: JSON.stringify({
+      speaker: 'user',
+      kind,
+      target: currentTarget,
+      taskType: taskTypeEl.value,
+      body,
+      ...(loopLink || {}),
+    }),
   })
   const payload = await response.json()
   if (!response.ok) throw new Error(payload.error || '메시지를 저장하지 못했습니다.')
@@ -689,9 +748,19 @@ for (const button of statusButtons) {
     try {
       setError('')
       await updateMessageStatus(selectedMessage.id, button.dataset.status)
+      if (button.dataset.status === 'blocked') prepareBlockedFeedback(selectedMessage)
     } catch (error) {
       setError(error.message)
     }
+  })
+}
+
+for (const button of workViewButtons) {
+  button.addEventListener('click', () => {
+    currentWorkView = button.dataset.workView
+    for (const item of workViewButtons) item.classList.toggle('active', item === button)
+    activeMessageId = null
+    renderMessages(currentMessages)
   })
 }
 

@@ -305,11 +305,12 @@ textarea {
   .chat-header { flex-direction: column; padding: 12px; }
   .chat-header { order: 1; }
   .filters { order: 2; }
+  .work-views { order: 3; }
   .workspace { display: contents; }
-  .messages { order: 3; max-height: 58vh; margin: 10px 10px 0; padding: 2px; }
-  .composer { order: 4; }
-  .conversation-panel { order: 5; margin: 10px; }
-  .error { order: 6; }
+  .messages { order: 4; max-height: 58vh; margin: 10px 10px 0; padding: 2px; }
+  .composer { order: 5; }
+  .conversation-panel { order: 6; margin: 10px; }
+  .error { order: 7; }
   .message { padding: 12px; }
   .message-head { flex-direction: column; gap: 4px; }
   .message-status-row { grid-template-columns: 1fr 1fr; }
@@ -399,6 +400,27 @@ textarea {
   min-width: 180px;
   height: 34px;
 }
+.work-views {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.work-view {
+  height: 34px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  padding: 0 12px;
+  font-size: 13px;
+}
+.work-view.active {
+  background: var(--green);
+  color: white;
+  border-color: var(--green);
+}
 .empty-state {
   border: 1px dashed var(--line);
   border-radius: 8px;
@@ -411,7 +433,9 @@ textarea {
   .chat-actions { justify-content: flex-start; min-width: 0; }
   .chat-actions button, .toggle { flex: 1 1 calc(50% - 8px); min-width: 0; justify-content: center; }
   .filters { padding: 10px 12px 0; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+  .work-views { padding: 8px 12px 0; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
   .filter { flex: 0 0 auto; }
+  .work-view { flex: 0 0 auto; }
   .search { flex: 0 0 180px; min-width: 180px; }
 }
 

@@ -1,5 +1,5 @@
 param(
-  [ValidateSet('all','claude','codex','gpt')]
+  [ValidateSet('all','room','both','gpt','claude','codex','harness','github','local')]
   [string]$Target = 'codex',
 
   [string]$BaseUrl = 'http://localhost:3100'
