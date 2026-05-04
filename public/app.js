@@ -45,6 +45,10 @@ const templateButtons = Array.from(document.querySelectorAll('[data-template]'))
 const statusButtons = Array.from(document.querySelectorAll('[data-status]'))
 const filterButtons = Array.from(document.querySelectorAll('[data-filter]'))
 const workViewButtons = Array.from(document.querySelectorAll('[data-work-view]'))
+const quickTargetButtons = Array.from(document.querySelectorAll('[data-quick-target]'))
+const focusComposeEl = document.querySelector('#focus-compose')
+const toggleToolsEl = document.querySelector('#toggle-tools')
+const toggleOpsEl = document.querySelector('#toggle-ops')
 
 const labels = {
   user: '사용자',
@@ -211,6 +215,9 @@ function updateTargetUI() {
   for (const button of targetButtons) {
     button.classList.toggle('active', button.dataset.target === currentTarget)
   }
+  for (const button of quickTargetButtons) {
+    button.classList.toggle('active', button.dataset.quickTarget === currentTarget)
+  }
   const preset = targetPresets[currentTarget]
   if (preset && taskTypeEl.value !== preset.taskType) {
     taskTypeEl.value = preset.taskType
@@ -369,7 +376,7 @@ function visibleMessages() {
 function selectMessage(message) {
   activeMessageId = message ? message.id : null
   if (!message) {
-    detailEl.className = 'detail-card empty'
+    detailEl.className = 'detail-card primary-detail empty'
     detailEl.innerHTML = '<strong>선택된 메시지 없음</strong><p>메시지를 선택하면 전체 작업 내용과 공유 대상을 확인할 수 있습니다.</p>'
     return
   }
@@ -377,7 +384,7 @@ function selectMessage(message) {
   const targetLabel = labels[message.target || 'room'] || '채팅방 기록'
   const statusLabel = statusLabels[message.status || 'todo'] || '기록'
   const typeLabel = taskTypeLabel(message)
-  detailEl.className = `detail-card ${message.speaker}`
+  detailEl.className = `detail-card primary-detail ${message.speaker}`
   detailEl.innerHTML = `
     <div class="detail-head">
       <span><span class="badge">${labels[message.speaker]}</span> · ${labels[message.kind]}</span>
@@ -707,6 +714,20 @@ for (const button of templateButtons) {
   })
 }
 
+function toggleBodyPanel(button, className) {
+  if (!button) return
+  const enabled = !document.body.classList.contains(className)
+  document.body.classList.toggle(className, enabled)
+  button.setAttribute('aria-pressed', String(enabled))
+}
+
+function applyQuickTarget(button) {
+  currentTarget = button.dataset.quickTarget
+  kindEl.value = button.dataset.quickKind || 'direction'
+  taskTypeEl.value = button.dataset.quickTask || targetPresets[currentTarget]?.taskType || 'question'
+  updateTargetUI()
+  bodyEl.focus()
+}
 refreshEl.addEventListener('click', () => {
   loadRoom().catch((error) => setError(error.message))
 })
@@ -734,6 +755,18 @@ if (recentRoutingEl) {
   })
 }
 
+if (focusComposeEl) {
+  focusComposeEl.addEventListener('click', () => bodyEl.focus())
+}
+if (toggleToolsEl) {
+  toggleToolsEl.addEventListener('click', () => toggleBodyPanel(toggleToolsEl, 'show-tools'))
+}
+if (toggleOpsEl) {
+  toggleOpsEl.addEventListener('click', () => toggleBodyPanel(toggleOpsEl, 'show-ops'))
+}
+for (const button of quickTargetButtons) {
+  button.addEventListener('click', () => applyQuickTarget(button))
+}
 for (const button of targetButtons) {
   button.addEventListener('click', () => {
     currentTarget = button.dataset.target

@@ -16,11 +16,15 @@
     <div class="status-pills">
       <span>기준: JH-SHARED</span>
       <span>지식: Obsidian Vault</span>
+      <a id="open-harness" class="top-action" href="http://127.0.0.1:3200" target="_blank" rel="noreferrer">Harness 열기</a>
+      <button id="focus-compose" class="top-action" type="button">새 공유</button>
+      <button id="toggle-tools" class="top-action" type="button" aria-pressed="false">작업 도구</button>
+      <button id="toggle-ops" class="top-action" type="button" aria-pressed="false">운영 상태</button>
     </div>
   </header>
 
   <main class="layout">
-    <aside class="panel side-panel">
+    <aside class="panel side-panel ops-panel">
       <h2>역할 분담</h2>
       <div class="role user"><strong>사용자</strong><span>방향 · 공유 · 승인</span><b id="count-user">0</b></div>
       <div class="role claude"><strong>Claude</strong><span>구현 · 운영 총괄</span><b id="count-claude">0</b></div>
@@ -45,8 +49,8 @@
     <section class="chat-panel">
       <div class="chat-header">
         <div>
-          <h2>에이전트 채팅방</h2>
-          <p>한 화면에서 사용자 공유, Claude 구현, Codex 검수를 보고 라우팅 대상을 선택합니다.</p>
+          <h2>작업 공유</h2>
+          <p>먼저 작업 내용을 공유하고, 필요한 경우에만 큐·루프·운영 도구를 엽니다.</p>
         </div>
                 <div class="chat-actions">
           <label class="toggle"><input id="auto-refresh" type="checkbox" checked> 자동 새로고침</label>
@@ -56,6 +60,21 @@
           <button id="refresh" type="button">새로고침</button>
         </div>
       </div>
+
+      <section class="quick-targets" aria-label="빠른 공유 모드">
+        <button class="quick-target active" type="button" data-quick-target="both" data-quick-kind="direction" data-quick-task="question">
+          <strong>함께 검토</strong>
+          <span>Claude와 Codex가 같이 읽습니다</span>
+        </button>
+        <button class="quick-target" type="button" data-quick-target="claude" data-quick-kind="direction" data-quick-task="implementation">
+          <strong>구현 요청</strong>
+          <span>Claude 구현 큐로 보냅니다</span>
+        </button>
+        <button class="quick-target" type="button" data-quick-target="codex" data-quick-kind="review" data-quick-task="review">
+          <strong>검수 요청</strong>
+          <span>Codex 검수 큐로 보냅니다</span>
+        </button>
+      </section>
 
       <div class="filters" aria-label="메시지 필터">
         <button class="filter active" type="button" data-filter="all">전체</button>
@@ -80,7 +99,7 @@
       <div class="workspace">
         <div id="messages" class="messages" aria-live="polite"></div>
         <aside class="conversation-panel">
-          <div class="conversation-card">
+          <div class="conversation-card advanced-card">
             <h3>공유 라우팅</h3>
             <p id="target-summary" class="storage-label">현재 공유 대상: Claude+Codex 공동</p>
             <a id="target-open-link" class="target-open-link" href="http://127.0.0.1:3100" target="_blank" rel="noreferrer" hidden>대상 대시보드 열기</a>
@@ -96,7 +115,7 @@
             </div>
             <p class="helper-text">대상 버튼은 즉시 실행이 아니라 작업 큐 분류입니다. 실행은 Claude/Codex가 큐를 읽고 수행합니다.</p>
           </div>
-          <div class="conversation-card">
+          <div class="conversation-card advanced-card">
             <h3>전달용 프롬프트</h3>
             <div class="template-actions">
               <button class="template-button" type="button" data-template="gpt-plan">GPT 계획</button>
@@ -110,7 +129,7 @@
             </div>
             <p class="helper-text">버튼을 누르면 대상, 작업 유형, 기본 문구가 입력창에 채워집니다.</p>
           </div>
-          <div class="conversation-card">
+          <div class="conversation-card advanced-card">
             <h3>작업 큐</h3>
             <div class="queue-grid">
               <section>
@@ -171,18 +190,18 @@
               </section>
             </div>
           </div>
-          <div class="conversation-card">
+          <div class="conversation-card advanced-card">
             <div class="queue-head">
               <h3>피드백 루프</h3>
               <span id="loop-count" class="queue-count">0</span>
             </div>
             <div id="loop-list" class="loop-list"></div>
           </div>
-          <div id="detail" class="detail-card empty">
+          <div id="detail" class="detail-card primary-detail empty">
             <strong>선택된 메시지 없음</strong>
             <p>메시지를 선택하면 전체 작업 내용과 공유 대상을 확인할 수 있습니다.</p>
           </div>
-          <div class="conversation-card">
+          <div class="conversation-card status-card">
             <h3>상태 변경</h3>
             <div class="status-actions">
               <button class="status-chip" type="button" data-status="todo">대기</button>
@@ -222,7 +241,7 @@
       <p id="error" class="error" hidden></p>
     </section>
 
-    <aside class="panel detail-panel">
+    <aside class="panel detail-panel ops-panel">
       <h2>운영 패널</h2>
       <div class="store-card"><strong>GitHub</strong><span>코드 · 버전관리</span></div>
       <div class="store-card"><strong>Google Drive</strong><span>자료 · 공유 문서</span></div>
@@ -252,6 +271,3 @@
   <script src="/app.js?v=20260503-loop-cleanup"></script>
 </body>
 </html>
-
-
-
