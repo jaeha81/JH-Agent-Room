@@ -8,6 +8,15 @@ JH 통합 구축 시스템에서 사용자, Claude, Codex가 같은 기준을 �
 - Claude: 구현 및 운영 총괄
 - Codex: 독립 검수 및 사용자 직접 보고
 
+## 현재 Agent Room 프로젝트 운영 기준
+
+2026-05-06 현재 이 저장소(`JH-Agent-Room`)는 사용자 지시에 따라 Codex가 직접 진행합니다.
+
+- Codex가 구현, 검증, 커밋, 푸시까지 직접 진행합니다.
+- Claude 승인은 Agent Room 코드 변경의 필수 게이트가 아닙니다.
+- Claude 관련 큐와 피드백 루프는 과거 운영 기록 또는 별도 협업 대상이며, 현재 Agent Room 자체 개선의 진행 권한은 Codex에 있습니다.
+- 새 세션은 `docs/session-handoff-2026-05-06.md`를 먼저 확인한 뒤 `git status --short --branch`와 현재 브라우저 `http://127.0.0.1:3100` 상태를 확인합니다.
+
 ## 실행
 
 권장 실행:
