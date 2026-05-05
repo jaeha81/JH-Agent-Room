@@ -424,6 +424,175 @@ function sendJson(res, status, payload) {
   res.end(JSON.stringify(payload))
 }
 
+function wantsHtml(req) {
+  const accept = req.headers.accept || ''
+  return accept.includes('text/html') && !accept.includes('application/json')
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
+}
+
+function shortText(value, length = 180) {
+  const text = String(value || '').replace(/\s+/g, ' ').trim()
+  return text.length > length ? `${text.slice(0, length - 1)}...` : text
+}
+
+function renderStatusHtml(payload) {
+  const messages = payload.messages || []
+  const counts = {
+    total: messages.length,
+    todo: 0,
+    working: 0,
+    review: 0,
+    blocked: 0,
+    done: 0,
+  }
+  for (const message of messages) {
+    const status = message.status || 'todo'
+    if (Object.prototype.hasOwnProperty.call(counts, status)) counts[status] += 1
+  }
+
+  const openMessages = messages
+    .filter((message) => (message.status || 'todo') !== 'done' && message.status !== 'logged')
+    .slice(-12)
+    .reverse()
+  const recentMessages = messages.slice(-10).reverse()
+  const targets = payload.syncTargets || []
+  const openLoops = payload.loops || []
+
+  const metricCards = [
+    ['Total', counts.total],
+    ['Todo', counts.todo],
+    ['Working', counts.working],
+    ['Review', counts.review],
+    ['Blocked', counts.blocked],
+    ['Done', counts.done],
+    ['Open loops', openLoops.length],
+  ].map(([label, value]) => `<div class="metric"><span>${label}</span><strong>${value}</strong></div>`).join('')
+
+  const targetRows = targets.map((target) => `
+    <tr>
+      <td>${escapeHtml(target.label)}</td>
+      <td><span class="state ${target.exists ? 'ok' : 'missing'}">${target.exists ? 'OK' : 'Missing'}</span></td>
+      <td>${escapeHtml(target.updatedAt || '-')}</td>
+    </tr>
+  `).join('')
+
+  const openRows = openMessages.map((message) => `
+    <li>
+      <strong>${escapeHtml(message.speaker)} / ${escapeHtml(message.target || 'room')}</strong>
+      <span>${escapeHtml(message.status || 'todo')} &middot; ${escapeHtml(message.kind || '')} &middot; ${escapeHtml(message.createdAt || '')}</span>
+      <p>${escapeHtml(shortText(message.body, 220))}</p>
+    </li>
+  `).join('') || '<li class="empty">No open work.</li>'
+
+  const recentRows = recentMessages.map((message) => `
+    <li>
+      <strong>${escapeHtml(message.speaker)} / ${escapeHtml(message.kind || '')}</strong>
+      <span>${escapeHtml(message.status || 'todo')} &middot; ${escapeHtml(message.createdAt || '')}</span>
+      <p>${escapeHtml(shortText(message.body, 220))}</p>
+    </li>
+  `).join('') || '<li class="empty">No messages.</li>'
+
+  const generatedAt = new Date().toISOString()
+  return `<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="15">
+  <title>JH Agent Room Status</title>
+  <style>
+    :root { color-scheme: light; --bg: #f4f7f3; --ink: #102018; --muted: #66736c; --line: #dfe7df; --card: #fff; --green: #1d7a4a; --amber: #a06012; --red: #b42318; --blue: #176d9b; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: Arial, "Noto Sans KR", sans-serif; }
+    header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; padding: 20px 24px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.94); }
+    h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: 0; }
+    p { margin: 0; line-height: 1.5; }
+    a { color: var(--green); font-weight: 800; text-decoration: none; }
+    main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; padding: 16px; }
+    section, aside { border: 1px solid var(--line); border-radius: 8px; background: var(--card); padding: 16px; box-shadow: 0 8px 20px rgba(16,32,24,.05); }
+    h2 { margin: 0 0 12px; font-size: 18px; }
+    .muted { color: var(--muted); }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+    .actions a { border: 1px solid var(--line); border-radius: 8px; background: #fff; padding: 10px 12px; }
+    .metrics { display: grid; grid-template-columns: repeat(7, minmax(92px, 1fr)); gap: 10px; margin-bottom: 16px; }
+    .metric { border: 1px solid var(--line); border-radius: 8px; background: #f8faf8; padding: 12px; }
+    .metric span { display: block; color: var(--muted); font-size: 12px; font-weight: 800; }
+    .metric strong { display: block; margin-top: 5px; font-size: 24px; }
+    ul { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+    li { border: 1px solid var(--line); border-radius: 8px; background: #f8faf8; padding: 12px; }
+    li strong, li span { display: block; }
+    li span { margin-top: 4px; color: var(--muted); font-size: 12px; }
+    li p { margin-top: 8px; white-space: pre-wrap; word-break: break-word; }
+    .empty { color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border-bottom: 1px solid var(--line); padding: 9px 6px; text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-size: 12px; }
+    .state { display: inline-flex; border-radius: 999px; padding: 3px 8px; color: #fff; font-size: 12px; font-weight: 900; }
+    .state.ok { background: var(--green); }
+    .state.missing { background: var(--red); }
+    .stack { display: grid; gap: 16px; }
+    @media (max-width: 980px) { header, main { display: block; } .actions { justify-content: flex-start; margin-top: 12px; } aside { margin-top: 16px; } .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>JH Agent Room Status</h1>
+      <p class="muted">Generated at ${escapeHtml(generatedAt)} &middot; auto-refreshes every 15 seconds</p>
+    </div>
+    <nav class="actions" aria-label="Status actions">
+      <a href="/">Open console</a>
+      <a href="/api/status?format=json">Raw JSON</a>
+      <a href="/api/queue">Queue API</a>
+      <a href="/api/loops">Loops API</a>
+    </nav>
+  </header>
+  <main>
+    <div class="stack">
+      <section>
+        <h2>Operations Summary</h2>
+        <div class="metrics">${metricCards}</div>
+        <p class="muted">Storage: ${escapeHtml(payload.storage)} &middot; Sync state: ${escapeHtml(payload.syncState)}</p>
+      </section>
+      <section>
+        <h2>Open Work</h2>
+        <ul>${openRows}</ul>
+      </section>
+      <section>
+        <h2>Recent Messages</h2>
+        <ul>${recentRows}</ul>
+      </section>
+    </div>
+    <aside>
+      <h2>System Files</h2>
+      <table>
+        <thead><tr><th>File</th><th>State</th><th>Updated</th></tr></thead>
+        <tbody>${targetRows}</tbody>
+      </table>
+    </aside>
+  </main>
+</body>
+</html>`
+}
+
+function sendStatus(req, res) {
+  const payload = safePayload()
+  if (wantsHtml(req) && new URL(req.url, `http://${req.headers.host}`).searchParams.get('format') !== 'json') {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache, must-revalidate' })
+    res.end(renderStatusHtml(payload))
+    return
+  }
+  sendJson(res, 200, payload)
+}
+
 function sendFile(res, filePath) {
   const ext = path.extname(filePath)
   const type = ext === '.css' ? 'text/css; charset=utf-8' : ext === '.js' ? 'text/javascript; charset=utf-8' : 'text/html; charset=utf-8'
@@ -654,7 +823,7 @@ const server = http.createServer((req, res) => {
   if (url.pathname === '/api/messages' && req.method === 'GET') return sendJson(res, 200, safePayload())
   if (url.pathname === '/api/messages' && req.method === 'POST') return void handleMessagePost(req, res)
   if (url.pathname === '/api/messages/status' && req.method === 'POST') return void handleStatusPost(req, res)
-  if (url.pathname === '/api/status' && req.method === 'GET') return sendJson(res, 200, safePayload())
+  if (url.pathname === '/api/status' && req.method === 'GET') return sendStatus(req, res)
   if (url.pathname === '/api/queue' && req.method === 'GET') return handleQueueGet(url, res)
   if (url.pathname === '/api/loops' && req.method === 'GET') return handleLoopsGet(url, res)
   if (url.pathname === '/api/inbox' && req.method === 'GET') return handleInboxGet(url, res)
