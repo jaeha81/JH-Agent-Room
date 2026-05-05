@@ -1093,3 +1093,420 @@ body.show-ops .layout {
     margin: 10px 10px 0;
   }
 }
+
+/* Development app redesign */
+:root {
+  --app-bg: #0f141a;
+  --app-panel: #151c24;
+  --app-panel-2: #1b2530;
+  --app-card: #f8fafc;
+  --app-ink: #101820;
+  --app-muted: #667180;
+  --app-line: #d7dee7;
+  --app-blue: #2563eb;
+  --app-green: #16835b;
+  --app-amber: #b7791f;
+  --app-red: #c2410c;
+}
+
+body {
+  background: #e9edf2;
+  color: var(--app-ink);
+}
+
+.topbar {
+  min-height: 72px;
+  align-items: center;
+  padding: 12px 18px;
+  background: #111820;
+  border-bottom: 1px solid #26323f;
+  box-shadow: none;
+}
+
+.topbar h1,
+.topbar .subtitle {
+  color: #f8fafc;
+}
+
+.topbar h1 {
+  font-size: 22px;
+}
+
+.topbar .subtitle {
+  max-width: 760px;
+  color: #aeb8c5;
+  font-size: 13px;
+}
+
+.eyebrow {
+  margin-bottom: 5px;
+  color: #6ee7b7;
+}
+
+.status-pills span,
+.top-action {
+  height: 36px;
+  min-height: 36px;
+  border-color: #334253;
+  background: #17212b;
+  color: #d8e1ea;
+  box-shadow: none;
+}
+
+.top-action:hover,
+.top-action[aria-pressed="true"] {
+  border-color: #6ee7b7;
+  background: #10251f;
+  color: #8cf0c8;
+}
+
+.layout,
+body.show-ops .layout {
+  grid-template-columns: 236px minmax(760px, 1fr) 330px;
+  gap: 0;
+  height: calc(100vh - 72px);
+  max-width: none;
+  padding: 0;
+  background: #e9edf2;
+}
+
+.panel,
+.chat-panel {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.side-panel.ops-panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--app-panel);
+  color: #d8e1ea;
+  padding: 14px;
+  border-right: 1px solid #26323f;
+}
+
+.side-panel h2 {
+  color: #f8fafc;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.role {
+  border-color: #2c3947;
+  background: var(--app-panel-2);
+}
+
+.role strong {
+  color: #f8fafc;
+}
+
+.role span,
+.checklist li {
+  color: #9aa8b8;
+}
+
+.role b {
+  background: #2f80ed;
+}
+
+.checklist li {
+  margin: 8px 0;
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: #111820;
+}
+
+.checklist li::before {
+  content: "";
+}
+
+.detail-panel.ops-panel {
+  display: flex;
+  flex-direction: column;
+  background: #f8fafc;
+  border-left: 1px solid #d7dee7;
+  padding: 14px;
+}
+
+.chat-panel {
+  background: #eef2f6;
+}
+
+.chat-header {
+  min-height: 68px;
+  padding: 12px 16px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--app-line);
+}
+
+.chat-header h2 {
+  font-size: 18px;
+}
+
+.chat-header p {
+  color: var(--app-muted);
+}
+
+.chat-actions {
+  min-width: 420px;
+}
+
+.chat-actions button,
+.filter,
+.work-view,
+.target-chip,
+.template-button,
+.status-chip,
+.mini-status {
+  border-radius: 7px;
+}
+
+.dev-studio {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  padding: 14px 16px 0;
+}
+
+.studio-board,
+.proposal-grid {
+  border: 1px solid var(--app-line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.studio-board {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 14px;
+  padding: 14px;
+}
+
+.studio-title span,
+.proposal-tile span {
+  display: block;
+  color: var(--app-blue);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.studio-title h2 {
+  margin: 4px 0 6px;
+  font-size: 24px;
+}
+
+.studio-title p {
+  margin: 0;
+  color: var(--app-muted);
+  line-height: 1.45;
+}
+
+.pipeline {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.pipeline-step {
+  min-height: 88px;
+  border: 1px solid #d7dee7;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 10px;
+}
+
+.pipeline-step.active {
+  border-color: #9cc7ff;
+  background: #edf5ff;
+}
+
+.pipeline-step span,
+.pipeline-step strong,
+.pipeline-step small {
+  display: block;
+}
+
+.pipeline-step span {
+  color: var(--app-blue);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.pipeline-step strong {
+  margin-top: 10px;
+  font-size: 15px;
+}
+
+.pipeline-step small {
+  margin-top: 4px;
+  color: var(--app-muted);
+  line-height: 1.35;
+}
+
+.proposal-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px;
+}
+
+.proposal-tile {
+  height: auto;
+  min-height: 104px;
+  border: 1px solid #d7dee7;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: var(--app-ink);
+  padding: 11px;
+  text-align: left;
+  white-space: normal;
+}
+
+.proposal-tile.primary {
+  border-color: #9cc7ff;
+  background: #edf5ff;
+}
+
+.proposal-tile:hover {
+  border-color: #7a899a;
+  background: #ffffff;
+}
+
+.proposal-tile strong,
+.proposal-tile small {
+  display: block;
+}
+
+.proposal-tile strong {
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 1.28;
+}
+
+.proposal-tile small {
+  margin-top: 7px;
+  color: var(--app-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.ops-metrics {
+  padding: 12px 16px 0;
+}
+
+.ops-metric {
+  border-color: var(--app-line);
+  background: #ffffff;
+}
+
+.quick-targets {
+  padding: 12px 16px 0;
+}
+
+.quick-target {
+  background: #ffffff;
+}
+
+.workspace {
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 12px;
+  padding: 12px 16px 0;
+}
+
+.messages {
+  border-color: var(--app-line);
+  background: #ffffff;
+}
+
+.message {
+  background: #f8fafc;
+}
+
+.message.active {
+  outline: 2px solid #2563eb;
+}
+
+.conversation-panel {
+  gap: 12px;
+}
+
+.conversation-card,
+.detail-card {
+  border-color: var(--app-line);
+}
+
+.status-card,
+.primary-detail {
+  display: block;
+  order: -1;
+}
+
+.advanced-card {
+  display: block;
+}
+
+body:not(.show-tools) .advanced-card {
+  display: none;
+}
+
+.composer {
+  background: #ffffff;
+}
+
+.composer textarea,
+select,
+input {
+  border-color: #c7d1dc;
+}
+
+.composer button[type="submit"] {
+  background: var(--app-blue);
+}
+
+.composer button[type="submit"]:hover {
+  background: #1e4fbf;
+}
+
+@media (max-width: 1180px) {
+  .layout,
+  body.show-ops .layout {
+    grid-template-columns: 210px minmax(0, 1fr);
+  }
+
+  .detail-panel.ops-panel {
+    display: none;
+  }
+
+  .dev-studio {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  body {
+    overflow: auto;
+  }
+
+  .layout,
+  body.show-ops .layout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .side-panel.ops-panel {
+    display: none;
+  }
+
+  .chat-actions {
+    min-width: 0;
+  }
+
+  .studio-board,
+  .pipeline,
+  .proposal-grid,
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+}

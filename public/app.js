@@ -752,6 +752,69 @@ function applyQuickTarget(button) {
   updateTargetUI()
   bodyEl.focus()
 }
+
+function applyTemplate(templateKey) {
+  const template = templates[templateKey]
+  if (!template) return
+  currentTarget = template.target
+  kindEl.value = template.kind
+  taskTypeEl.value = template.taskType || 'question'
+  bodyEl.value = template.body
+  updateTargetUI()
+  bodyEl.focus()
+}
+
+function mountDevelopmentStudio() {
+  if (document.querySelector('.dev-studio')) return
+  const header = document.querySelector('.chat-header')
+  if (!header) return
+
+  const studio = document.createElement('section')
+  studio.className = 'dev-studio'
+  studio.setAttribute('aria-label', 'Agent Room development studio')
+  studio.innerHTML = `
+    <div class="studio-board">
+      <div class="studio-title">
+        <span>LIVE DEVELOPMENT APP</span>
+        <h2>Agent Room Studio</h2>
+        <p>Plan, implementation, review, and handoff run from one workspace.</p>
+      </div>
+      <div class="pipeline" aria-label="Development pipeline">
+        <div class="pipeline-step active"><span>01</span><strong>Plan</strong><small>Scope and routing</small></div>
+        <div class="pipeline-step"><span>02</span><strong>Build</strong><small>Claude / Codex work</small></div>
+        <div class="pipeline-step"><span>03</span><strong>Review</strong><small>Independent checks</small></div>
+        <div class="pipeline-step"><span>04</span><strong>Ship</strong><small>Save and push</small></div>
+      </div>
+    </div>
+    <div class="proposal-grid" aria-label="Agent Room proposals">
+      <button class="proposal-tile primary" type="button" data-proposal-template="shared-plan">
+        <span>Proposal 1</span>
+        <strong>Main Console Decision Panel</strong>
+        <small>User-facing decision cards for the next development path.</small>
+      </button>
+      <button class="proposal-tile" type="button" data-proposal-template="local-task">
+        <span>Proposal 2</span>
+        <strong>Local Development Workspace</strong>
+        <small>Ports, files, browser checks, and local tasks as first-class work.</small>
+      </button>
+      <button class="proposal-tile" type="button" data-proposal-template="codex-review">
+        <span>Proposal 3</span>
+        <strong>Review Control Center</strong>
+        <small>Review queues, blocked work, and risk notes without raw logs.</small>
+      </button>
+      <button class="proposal-tile" type="button" data-proposal-template="harness-start">
+        <span>Proposal 4</span>
+        <strong>Harness Launch Flow</strong>
+        <small>Start full development analysis and keep results in the loop.</small>
+      </button>
+    </div>
+  `
+  header.insertAdjacentElement('afterend', studio)
+  for (const button of studio.querySelectorAll('[data-proposal-template]')) {
+    button.addEventListener('click', () => applyTemplate(button.dataset.proposalTemplate))
+  }
+}
+
 refreshEl.addEventListener('click', () => {
   loadRoom().catch((error) => setError(error.message))
 })
@@ -829,6 +892,7 @@ for (const button of filterButtons) {
   })
 }
 
+mountDevelopmentStudio()
 updateTargetUI()
 updateStatusUI(null)
 loadRoom()
