@@ -40,6 +40,13 @@ const queueCountGithubEl = document.querySelector('#queue-count-github')
 const queueCountLocalEl = document.querySelector('#queue-count-local')
 const loopListEl = document.querySelector('#loop-list')
 const loopCountEl = document.querySelector('#loop-count')
+const opsMetricEls = {
+  todo: document.querySelector('[data-metric="todo"]'),
+  working: document.querySelector('[data-metric="working"]'),
+  review: document.querySelector('[data-metric="review"]'),
+  blocked: document.querySelector('[data-metric="blocked"]'),
+  done: document.querySelector('[data-metric="done"]'),
+}
 const targetButtons = Array.from(document.querySelectorAll('[data-target]'))
 const templateButtons = Array.from(document.querySelectorAll('[data-template]'))
 const statusButtons = Array.from(document.querySelectorAll('[data-status]'))
@@ -60,7 +67,7 @@ const labels = {
   notice: '공지',
   sync: '동기화',
   room: '공유',
-  both: 'Claude+Codex 공동',
+  both: 'Claude+Codex 공동 루프',
   gpt: 'GPT 계획',
   harness: 'Harness 착수',
   github: 'Codex: GitHub 확인',
@@ -105,13 +112,13 @@ const templates = {
     target: 'claude',
     taskType: 'implementation',
     kind: 'direction',
-    body: 'Claude 구현 공유:\n작업 목적:\n대상 저장소/폴더:\n수정 예정 파일:\n기대 결과:\n작업 시작 전 잠금 확인:\n구현 후 Agent Room에 남길 내용:',
+    body: 'Claude 작업 공유:\n역할: 플랜 / 구현 / 운영 정리 / Codex 이관 중 선택\n작업 목적:\n대상 저장소/폴더:\n수정 예정 파일:\n기대 결과:\n작업 시작 전 잠금 확인:\nCodex 교차 확인이 필요한 지점:\n작업 후 Agent Room에 남길 내용:',
   },
   'codex-review': {
     target: 'codex',
     taskType: 'review',
     kind: 'review',
-    body: '검수 대상 작업:\n검수 범위:\n확인할 파일/커밋:\n보고 형식:',
+    body: 'Codex 작업 공유:\n역할: 분석 / 구현 / 검수 / Claude 이관 중 선택\n작업 목적:\n대상 저장소/폴더:\n확인 또는 수정할 파일:\n검증 기준:\nClaude에게 이관할 자료:\n사용자 승인 필요 항목:\nAgent Room에 남길 결과:',
   },
   'harness-start': {
     target: 'harness',
@@ -141,7 +148,7 @@ const templates = {
     target: 'both',
     taskType: 'question',
     kind: 'direction',
-    body: '공동 답변 요청:\n사용자 질문:\nClaude가 볼 관점: 구현/운영/자동화\nCodex가 볼 관점: 검증/위험/품질\n최종 답변 형식:',
+    body: '공동 루프 요청:\n사용자 질문/작업:\nClaude 관점: 플랜/구현/운영\nCodex 관점: 분석/구현/검수\n상호 이관할 자료:\n최종 답변 형식:',
   },
 }
 
@@ -153,8 +160,8 @@ const targetPresets = {
   },
   both: {
     taskType: 'question',
-    placeholder: 'Claude와 Codex가 함께 읽을 질문이나 작업 내용을 공유하세요',
-    summary: 'Claude는 구현/운영 관점, Codex는 검증/위험 관점으로 함께 검토합니다.',
+    placeholder: 'Claude와 Codex가 같은 루프에서 함께 다룰 질문, 작업, 이관 자료를 공유하세요',
+    summary: 'Claude와 Codex가 각자 작업자 또는 검증자가 되어 상호 검토합니다.',
   },
   gpt: {
     taskType: 'plan',
@@ -163,13 +170,13 @@ const targetPresets = {
   },
   claude: {
     taskType: 'implementation',
-    placeholder: 'Claude가 구현할 저장소, 파일, 기대 결과를 입력하세요',
-    summary: 'Claude 구현 작업 큐에 올라갑니다. 구현 후 Codex 검수로 넘길 수 있습니다.',
+    placeholder: 'Claude가 플랜·구현·운영 정리할 저장소, 파일, 기대 결과를 입력하세요',
+    summary: 'Claude 작업 큐에 올라갑니다. 필요 시 Codex 교차 확인으로 넘길 수 있습니다.',
   },
   codex: {
     taskType: 'review',
-    placeholder: 'Codex가 검증할 파일, 커밋, Claude 결과물을 입력하세요',
-    summary: 'Codex 검수 큐에 올라갑니다. 보안, 품질, 회귀 위험을 우선 확인합니다.',
+    placeholder: 'Codex가 분석·구현·검수할 파일, 커밋, 이관 자료를 입력하세요',
+    summary: 'Codex 작업 큐에 올라갑니다. 사용자 지시가 있으면 개발/구현도 진행하고 Claude에 이관할 수 있습니다.',
   },
   harness: {
     taskType: 'harness',
@@ -402,6 +409,20 @@ function selectMessage(message) {
   updateStatusUI(message)
 }
 
+function renderOpsMetrics(messages) {
+  const counts = { todo: 0, working: 0, review: 0, blocked: 0, done: 0 }
+  for (const message of messages) {
+    if (message.autoAck || message.status === 'logged') continue
+    const status = message.status || 'todo'
+    if (Object.prototype.hasOwnProperty.call(counts, status)) {
+      counts[status] += 1
+    }
+  }
+  for (const [status, count] of Object.entries(counts)) {
+    if (opsMetricEls[status]) opsMetricEls[status].textContent = String(count)
+  }
+}
+
 function renderMessages(messages) {
   currentMessages = messages
   messagesEl.innerHTML = ''
@@ -575,6 +596,7 @@ function renderLoops(loops = []) {
 
 function renderPayload(payload) {
   trackIncomingMessages(payload.messages)
+  renderOpsMetrics(payload.messages)
   renderMessages(payload.messages)
   renderQueues(payload.messages)
   renderLoops(payload.loops || [])

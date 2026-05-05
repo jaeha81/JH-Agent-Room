@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>JH Agent Room</title>
-  <link rel="stylesheet" href="/styles.css?v=20260505-desktop-console">
+  <link rel="stylesheet" href="/styles.css?v=20260506-ops-metrics">
 </head>
 <body>
   <header class="topbar">
     <div>
       <p class="eyebrow">JH 통합 구축 시스템 · Desktop Command Center</p>
       <h1>JH Agent Room</h1>
-      <p class="subtitle">작업 큐, 구현 지시, Codex 검수, 동기화 상태를 한 화면에서 관리하는 로컬 운영 콘솔</p>
+      <p class="subtitle">Claude와 Codex의 독립 작업, 상호 이관, 교차 검수, 동기화 상태를 한 화면에서 관리하는 로컬 운영 콘솔</p>
     </div>
     <div class="status-pills">
       <span>JH-SHARED</span>
@@ -32,9 +32,9 @@
 
       <h2 class="section-title">사전 검수 필수</h2>
       <ul class="checklist">
-        <li>Claude 작업 결과는 사용자 전달 전 Codex 검수</li>
-        <li>Codex 검수 결과는 Agent Room에 기록</li>
-        <li>수정 필요 시 같은 루프에 Claude와 공유</li>
+        <li>Claude/Codex 독립 작업은 Agent Room에 작업자와 검증자를 명시</li>
+        <li>한쪽이 구현한 결과는 가능한 경우 다른 쪽이 교차 확인</li>
+        <li>수정 필요 시 같은 루프에 자료와 판단 근거를 이관</li>
       </ul>
 
       <h2 class="section-title">동기화 기준</h2>
@@ -50,7 +50,7 @@
       <div class="chat-header">
         <div>
           <h2>작업 관제</h2>
-          <p>Claude 구현, Codex 검수, 사용자 승인 흐름을 큐 기준으로 정리합니다.</p>
+          <p>Claude와 Codex의 독립 작업, 상호 이관, 교차 검수, 사용자 승인 흐름을 큐 기준으로 정리합니다.</p>
         </div>
                 <div class="chat-actions">
           <label class="toggle"><input id="auto-refresh" type="checkbox" checked> 자동 새로고침</label>
@@ -61,18 +61,41 @@
         </div>
       </div>
 
+      <section id="ops-metrics" class="ops-metrics" aria-label="운영 상태 요약">
+        <div class="ops-metric">
+          <span>대기</span>
+          <strong data-metric="todo">0</strong>
+        </div>
+        <div class="ops-metric">
+          <span>진행</span>
+          <strong data-metric="working">0</strong>
+        </div>
+        <div class="ops-metric">
+          <span>검수</span>
+          <strong data-metric="review">0</strong>
+        </div>
+        <div class="ops-metric risk">
+          <span>막힘</span>
+          <strong data-metric="blocked">0</strong>
+        </div>
+        <div class="ops-metric done">
+          <span>완료</span>
+          <strong data-metric="done">0</strong>
+        </div>
+      </section>
+
       <section class="quick-targets" aria-label="빠른 공유 모드">
         <button class="quick-target active" type="button" data-quick-target="both" data-quick-kind="direction" data-quick-task="question">
-          <strong>함께 검토</strong>
-          <span>Claude와 Codex가 같이 읽습니다</span>
+          <strong>공동 루프</strong>
+          <span>Claude와 Codex가 같은 작업 루프에서 상호 검토합니다</span>
         </button>
         <button class="quick-target" type="button" data-quick-target="claude" data-quick-kind="direction" data-quick-task="implementation">
-          <strong>구현 요청</strong>
-          <span>Claude 구현 큐로 보냅니다</span>
+          <strong>Claude 작업</strong>
+          <span>Claude 플랜·구현·운영 큐로 보냅니다</span>
         </button>
         <button class="quick-target" type="button" data-quick-target="codex" data-quick-kind="review" data-quick-task="review">
-          <strong>검수 요청</strong>
-          <span>Codex 검수 큐로 보냅니다</span>
+          <strong>Codex 작업</strong>
+          <span>Codex 분석·구현·검수 큐로 보냅니다</span>
         </button>
       </section>
 
@@ -119,8 +142,8 @@
             <h3>전달용 프롬프트</h3>
             <div class="template-actions">
               <button class="template-button" type="button" data-template="gpt-plan">GPT 계획</button>
-              <button class="template-button" type="button" data-template="claude-start">Claude 구현</button>
-              <button class="template-button" type="button" data-template="codex-review">Codex 검수</button>
+              <button class="template-button" type="button" data-template="claude-start">Claude 작업</button>
+              <button class="template-button" type="button" data-template="codex-review">Codex 작업</button>
               <button class="template-button" type="button" data-template="harness-start">Harness 착수 템플릿</button>
               <button class="template-button" type="button" data-template="harness-sync">Harness 연동 점검</button>
               <button class="template-button" type="button" data-template="github-status">Codex용 GitHub 확인</button>
@@ -155,14 +178,14 @@
               </section>
               <section>
                 <div class="queue-head">
-                  <strong>Claude 할 일</strong>
+                  <strong>Claude 작업 큐</strong>
                   <span id="queue-count-claude" class="queue-count">0</span>
                 </div>
                 <div id="queue-claude" class="queue-list"></div>
               </section>
               <section>
                 <div class="queue-head">
-                  <strong>Codex 할 일</strong>
+                  <strong>Codex 작업 큐</strong>
                   <span id="queue-count-codex" class="queue-count">0</span>
                 </div>
                 <div id="queue-codex" class="queue-list"></div>
@@ -268,6 +291,6 @@
     </aside>
   </main>
 
-  <script src="/app.js?v=20260505-desktop-console"></script>
+  <script src="/app.js?v=20260506-ops-metrics"></script>
 </body>
 </html>
