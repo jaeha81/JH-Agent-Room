@@ -87,7 +87,7 @@ const statusLabels = {
 
 let currentMessages = []
 let currentFilter = 'all'
-let currentWorkView = 'all'
+let currentWorkView = 'yesterday'
 let refreshTimer = null
 let activeMessageId = null
 let currentTarget = 'both'
@@ -265,11 +265,22 @@ function updateStatusUI(message) {
 }
 
 function workViewMatches(message) {
+  if (currentWorkView === 'yesterday') return isYesterday(message.createdAt)
   if (currentWorkView === 'all') return true
   if (currentWorkView === 'blocked') return message.status === 'blocked'
   if (currentWorkView === 'claude') return ['both', 'claude', 'harness'].includes(message.target || 'room') && message.speaker !== 'claude'
   if (currentWorkView === 'codex') return ['both', 'codex', 'github', 'local'].includes(message.target || 'room') && message.speaker !== 'codex'
   return true
+}
+
+function isYesterday(value) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return false
+  const yesterday = new Date()
+  yesterday.setDate(yesterday.getDate() - 1)
+  return date.getFullYear() === yesterday.getFullYear()
+    && date.getMonth() === yesterday.getMonth()
+    && date.getDate() === yesterday.getDate()
 }
 
 function messageTitle(message) {
@@ -775,37 +786,44 @@ function mountDevelopmentStudio() {
   studio.innerHTML = `
     <div class="studio-board">
       <div class="studio-title">
-        <span>LIVE DEVELOPMENT APP</span>
-        <h2>Agent Room Studio</h2>
-        <p>Plan, implementation, review, and handoff run from one workspace.</p>
+        <span>실제 개발 앱 화면</span>
+        <h2>에이전트룸 작업실</h2>
+        <p>기획, 구현, 검수, 저장 흐름을 한 화면에서 고르고 추적합니다.</p>
       </div>
       <div class="pipeline" aria-label="Development pipeline">
-        <div class="pipeline-step active"><span>01</span><strong>Plan</strong><small>Scope and routing</small></div>
-        <div class="pipeline-step"><span>02</span><strong>Build</strong><small>Claude / Codex work</small></div>
-        <div class="pipeline-step"><span>03</span><strong>Review</strong><small>Independent checks</small></div>
-        <div class="pipeline-step"><span>04</span><strong>Ship</strong><small>Save and push</small></div>
+        <div class="pipeline-step active"><span>01</span><strong>기획</strong><small>범위와 담당 정리</small></div>
+        <div class="pipeline-step"><span>02</span><strong>구현</strong><small>Claude / Codex 작업</small></div>
+        <div class="pipeline-step"><span>03</span><strong>검수</strong><small>독립 확인</small></div>
+        <div class="pipeline-step"><span>04</span><strong>저장</strong><small>기록과 배포</small></div>
       </div>
+    </div>
+    <div class="queue-shortcuts" aria-label="Work queue shortcuts">
+      <button type="button" data-work-jump="yesterday"><span>전일 기준</span><strong>어제 항목만 보기</strong></button>
+      <button type="button" data-work-jump="all"><span>전체 작업</span><strong>모든 큐 열기</strong></button>
+      <button type="button" data-work-jump="claude"><span>Claude 큐</span><strong>구현 대기</strong></button>
+      <button type="button" data-work-jump="codex"><span>Codex 큐</span><strong>검수 대기</strong></button>
+      <button type="button" data-work-jump="blocked"><span>막힘</span><strong>차단 이슈</strong></button>
     </div>
     <div class="proposal-grid" aria-label="Agent Room proposals">
       <button class="proposal-tile primary" type="button" data-proposal-template="shared-plan">
-        <span>Proposal 1</span>
-        <strong>Main Console Decision Panel</strong>
-        <small>User-facing decision cards for the next development path.</small>
+        <span>제안 1</span>
+        <strong>메인 선택 패널</strong>
+        <small>다음 개발 방향을 사용자가 바로 고르는 화면입니다.</small>
       </button>
       <button class="proposal-tile" type="button" data-proposal-template="local-task">
-        <span>Proposal 2</span>
-        <strong>Local Development Workspace</strong>
-        <small>Ports, files, browser checks, and local tasks as first-class work.</small>
+        <span>제안 2</span>
+        <strong>로컬 개발 작업실</strong>
+        <small>포트, 파일, 브라우저 확인을 작업 큐로 관리합니다.</small>
       </button>
       <button class="proposal-tile" type="button" data-proposal-template="codex-review">
-        <span>Proposal 3</span>
-        <strong>Review Control Center</strong>
-        <small>Review queues, blocked work, and risk notes without raw logs.</small>
+        <span>제안 3</span>
+        <strong>검수 관제 센터</strong>
+        <small>검수 대기, 막힘, 위험 내용을 로그 없이 확인합니다.</small>
       </button>
       <button class="proposal-tile" type="button" data-proposal-template="harness-start">
-        <span>Proposal 4</span>
-        <strong>Harness Launch Flow</strong>
-        <small>Start full development analysis and keep results in the loop.</small>
+        <span>제안 4</span>
+        <strong>하네스 착수 흐름</strong>
+        <small>개발 분석을 시작하고 결과를 같은 루프에 남깁니다.</small>
       </button>
     </div>
   `
@@ -813,6 +831,48 @@ function mountDevelopmentStudio() {
   for (const button of studio.querySelectorAll('[data-proposal-template]')) {
     button.addEventListener('click', () => applyTemplate(button.dataset.proposalTemplate))
   }
+  for (const button of studio.querySelectorAll('[data-work-jump]')) {
+    button.addEventListener('click', () => setWorkView(button.dataset.workJump))
+  }
+}
+
+function localizeStaticChrome() {
+  const eyebrow = document.querySelector('.eyebrow')
+  if (eyebrow) eyebrow.textContent = 'JH 통합 구축 시스템 · 개발 작업실'
+  const subtitle = document.querySelector('.subtitle')
+  if (subtitle) subtitle.textContent = 'Claude와 Codex 작업을 한 화면에서 선택하고, 큐별로 들어가 확인하는 로컬 개발 프로그램'
+  if (focusComposeEl) focusComposeEl.textContent = '새 작업'
+  if (toggleToolsEl) toggleToolsEl.textContent = '작업 도구'
+  if (toggleOpsEl) toggleOpsEl.textContent = '운영 상태'
+  if (refreshEl) refreshEl.textContent = '새로고침'
+  if (quickSyncEl) quickSyncEl.textContent = '동기화'
+  if (quickUpdateEl) quickUpdateEl.textContent = '업데이트'
+  if (exportLogEl) exportLogEl.textContent = '내보내기'
+}
+
+function mountYesterdayWorkView() {
+  const workViews = document.querySelector('.work-views')
+  if (!workViews || workViews.querySelector('[data-work-view="yesterday"]')) return
+  const button = document.createElement('button')
+  button.className = 'work-view active'
+  button.type = 'button'
+  button.dataset.workView = 'yesterday'
+  button.textContent = '전일 기준'
+  button.addEventListener('click', () => setWorkView('yesterday'))
+  workViews.prepend(button)
+  for (const item of workViewButtons) item.classList.remove('active')
+}
+
+function setWorkView(view) {
+  currentWorkView = view
+  for (const item of document.querySelectorAll('[data-work-view]')) {
+    item.classList.toggle('active', item.dataset.workView === view)
+  }
+  for (const item of document.querySelectorAll('[data-work-jump]')) {
+    item.classList.toggle('active', item.dataset.workJump === view)
+  }
+  activeMessageId = null
+  renderMessages(currentMessages)
 }
 
 refreshEl.addEventListener('click', () => {
@@ -877,10 +937,7 @@ for (const button of statusButtons) {
 
 for (const button of workViewButtons) {
   button.addEventListener('click', () => {
-    currentWorkView = button.dataset.workView
-    for (const item of workViewButtons) item.classList.toggle('active', item === button)
-    activeMessageId = null
-    renderMessages(currentMessages)
+    setWorkView(button.dataset.workView)
   })
 }
 
@@ -892,7 +949,10 @@ for (const button of filterButtons) {
   })
 }
 
+mountYesterdayWorkView()
 mountDevelopmentStudio()
+localizeStaticChrome()
+setWorkView('yesterday')
 updateTargetUI()
 updateStatusUI(null)
 loadRoom()
