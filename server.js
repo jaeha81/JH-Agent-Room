@@ -540,6 +540,12 @@ function renderStatusHtml(payload) {
     .state.missing { background: var(--red); }
     .stack { display: grid; gap: 16px; }
     @media (max-width: 980px) { header, main { display: block; } .actions { justify-content: flex-start; margin-top: 12px; } aside { margin-top: 16px; } .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .proposal-preview { display: grid; gap: 10px; margin-bottom: 18px; }
+    .proposal-card { border: 1px solid var(--line); border-left: 4px solid var(--green); border-radius: 8px; background: #f8faf8; padding: 12px; }
+    .proposal-card strong { display: block; font-size: 14px; }
+    .proposal-card span { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .proposal-card.is-primary { border-left-color: var(--blue); background: #edf7fc; }
+    .proposal-card.is-risk { border-left-color: var(--amber); background: #fff6e8; }
   </style>
 </head>
 <body>
@@ -572,6 +578,25 @@ function renderStatusHtml(payload) {
       </section>
     </div>
     <aside>
+      <h2>Agent Room 4 Proposals</h2>
+      <div class="proposal-preview" aria-label="Agent Room proposal preview">
+        <div class="proposal-card is-primary">
+          <strong>1. Main Console Decision Panel</strong>
+          <span>메인 화면 오른쪽에 4가지 선택지를 고정해 사용자가 바로 비교하고 다음 작업을 고릅니다.</span>
+        </div>
+        <div class="proposal-card">
+          <strong>2. Status Page Preview</strong>
+          <span>현재처럼 /api/status 오른쪽에서 운영 상태와 다음 개선안을 동시에 미리 봅니다.</span>
+        </div>
+        <div class="proposal-card">
+          <strong>3. Agent Room Message</strong>
+          <span>4가지 제안을 메시지 로그에 남겨 Claude/Codex 작업 큐와 의사결정 이력을 연결합니다.</span>
+        </div>
+        <div class="proposal-card is-risk">
+          <strong>4. README Decision Record</strong>
+          <span>장기 기록용 문서로 정리하되, 즉시 선택 UI로는 메인 패널보다 약합니다.</span>
+        </div>
+      </div>
       <h2>System Files</h2>
       <table>
         <thead><tr><th>File</th><th>State</th><th>Updated</th></tr></thead>
