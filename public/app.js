@@ -190,6 +190,8 @@ const targetPresets = {
 }
 
 function formatTimestamp(value) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '시간 미확인'
   return new Intl.DateTimeFormat('ko-KR', {
     year: 'numeric',
     month: '2-digit',
@@ -197,7 +199,7 @@ function formatTimestamp(value) {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
-  }).format(new Date(value))
+  }).format(date)
 }
 
 function setError(message) {

@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JH Agent Room Design Options</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --ink: #17202a;
+      --muted: #65717d;
+      --line: #d8dee6;
+      --card: #ffffff;
+      --green: #237452;
+      --blue: #236f9f;
+      --amber: #a06516;
+      --navy: #1f2933;
+      --soft: #f8fafb;
+      --shadow: 0 16px 42px rgba(23, 32, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #eef3f5 0, #f7f8fa 320px);
+      color: var(--ink);
+      font-family: Arial, "Noto Sans KR", sans-serif;
+    }
+
+    header {
+      padding: 28px 32px 18px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.88);
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.2;
+    }
+
+    .lead {
+      max-width: 920px;
+      margin: 10px 0 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    main {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 22px;
+    }
+
+    .option-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .option {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--card);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .option-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .option-title h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .option-title p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .tag {
+      align-self: flex-start;
+      border: 1px solid #cbd5df;
+      border-radius: 999px;
+      background: #f8fafb;
+      color: #3d4954;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .mock {
+      height: 360px;
+      padding: 16px;
+      background: #f6f8fa;
+    }
+
+    .browser-frame,
+    .desktop-frame,
+    .console-frame {
+      height: 100%;
+      border: 1px solid #cdd5df;
+      border-radius: 8px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .frame-top {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 34px;
+      padding: 0 12px;
+      border-bottom: 1px solid #dce2e8;
+      background: #f9fbfc;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #c6ced7;
+    }
+
+    .frame-url {
+      flex: 1;
+      height: 18px;
+      margin-left: 8px;
+      border-radius: 999px;
+      background: #edf1f5;
+      color: #65717d;
+      padding: 2px 10px;
+      font-size: 11px;
+      line-height: 14px;
+    }
+
+    .dash {
+      display: grid;
+      grid-template-columns: 150px minmax(0, 1fr) 170px;
+      height: calc(100% - 34px);
+    }
+
+    .dash-nav,
+    .dash-side {
+      padding: 12px;
+      background: #f8fafb;
+    }
+
+    .dash-nav {
+      border-right: 1px solid #e1e7ed;
+    }
+
+    .dash-side {
+      border-left: 1px solid #e1e7ed;
+    }
+
+    .dash-main {
+      padding: 12px;
+    }
+
+    .pill,
+    .line,
+    .block,
+    .mini-card {
+      border-radius: 7px;
+      background: #e9eef2;
+    }
+
+    .pill {
+      height: 26px;
+      margin-bottom: 8px;
+    }
+
+    .pill.active {
+      background: #dff1e7;
+      border: 1px solid #9fd3b8;
+    }
+
+    .line {
+      height: 10px;
+      margin-bottom: 8px;
+    }
+
+    .line.short { width: 62%; }
+    .line.mid { width: 78%; }
+
+    .block {
+      min-height: 64px;
+      margin-bottom: 10px;
+      border-left: 4px solid var(--green);
+      background: #ffffff;
+      border: 1px solid #dce3e9;
+    }
+
+    .block.amber { border-left-color: var(--amber); }
+    .block.blue { border-left-color: var(--blue); }
+
+    .launcher {
+      display: grid;
+      place-items: center;
+      height: 100%;
+      background: radial-gradient(circle at top left, #edf7f2, transparent 40%), #f8fafb;
+    }
+
+    .launcher-card {
+      width: 270px;
+      border: 1px solid #cfd7df;
+      border-radius: 10px;
+      background: #fff;
+      padding: 18px;
+      box-shadow: 0 16px 34px rgba(23, 32, 42, 0.1);
+    }
+
+    .launcher-title {
+      margin: 0 0 14px;
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .launcher-button {
+      height: 36px;
+      margin-top: 9px;
+      border-radius: 8px;
+      background: var(--navy);
+    }
+
+    .launcher-button.green { background: var(--green); }
+
+    .desktop-frame {
+      display: grid;
+      grid-template-rows: 38px minmax(0, 1fr);
+      background: #fff;
+    }
+
+    .app-titlebar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      border-bottom: 1px solid #dce2e8;
+      background: #17202a;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .desktop-body {
+      display: grid;
+      grid-template-columns: 130px minmax(0, 1fr) 150px;
+      min-height: 0;
+    }
+
+    .desktop-nav {
+      padding: 12px;
+      background: #202b36;
+    }
+
+    .desktop-nav .pill {
+      background: #344250;
+    }
+
+    .desktop-nav .pill.active {
+      background: #2f8b64;
+      border: 0;
+    }
+
+    .desktop-work {
+      padding: 12px;
+      background: #f7f9fb;
+    }
+
+    .desktop-inspector {
+      padding: 12px;
+      border-left: 1px solid #dce2e8;
+      background: #fff;
+    }
+
+    .console-frame {
+      display: grid;
+      grid-template-rows: 54px 98px minmax(0, 1fr);
+    }
+
+    .console-header {
+      padding: 12px;
+      border-bottom: 1px solid #dce2e8;
+      background: #fff;
+    }
+
+    .console-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      padding: 10px;
+      background: #f8fafb;
+      border-bottom: 1px solid #dce2e8;
+    }
+
+    .metric {
+      border: 1px solid #dce2e8;
+      border-radius: 8px;
+      background: #fff;
+      padding: 10px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 18px;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .console-timeline {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 12px;
+    }
+
+    .notes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 14px 18px 18px;
+      border-top: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .notes h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+    }
+
+    .notes ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .recommendation {
+      margin-top: 18px;
+      border: 1px solid #a8cfbb;
+      border-radius: 10px;
+      background: #eef8f2;
+      padding: 16px 18px;
+      color: #174b35;
+    }
+
+    .recommendation strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 16px;
+    }
+
+    @media (max-width: 1080px) {
+      .option-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      header,
+      main {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      .option-head,
+      .notes {
+        grid-template-columns: 1fr;
+        flex-direction: column;
+      }
+
+      .mock {
+        height: 310px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <p class="eyebrow">JH Agent Room · Design Confirmation</p>
+    <h1>Agent Room 앱화 및 전문 UI 4가지 안</h1>
+    <p class="lead">아래 목업은 구현 방향 컨펌용입니다. 실제 제품 코드는 B안 기준으로 일부 적용되어 있으며, 이 화면에서 장기 방향을 다시 선택할 수 있습니다.</p>
+  </header>
+
+  <main>
+    <section class="option-grid" aria-label="디자인 옵션">
+      <article class="option">
+        <div class="option-head">
+          <div class="option-title">
+            <h2>안 1. 웹 대시보드 전문화</h2>
+            <p>현재 Node 서버와 브라우저 화면을 유지하면서 작업 큐 중심으로 정리합니다.</p>
+          </div>
+          <span class="tag">가장 빠름</span>
+        </div>
+        <div class="mock">
+          <div class="browser-frame">
+            <div class="frame-top">
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+              <span class="frame-url">localhost:3100 · JH Agent Room</span>
+            </div>
+            <div class="dash">
+              <div class="dash-nav">
+                <div class="pill active"></div>
+                <div class="pill"></div>
+                <div class="pill"></div>
+                <div class="pill"></div>
+              </div>
+              <div class="dash-main">
+                <div class="line mid"></div>
+                <div class="line short"></div>
+                <div class="block"></div>
+                <div class="block amber"></div>
+                <div class="block blue"></div>
+              </div>
+              <div class="dash-side">
+                <div class="mini-card block blue"></div>
+                <div class="line"></div>
+                <div class="line mid"></div>
+                <div class="line short"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="notes">
+          <div>
+            <h3>장점</h3>
+            <ul>
+              <li>현재 구조를 거의 유지</li>
+              <li>리스크와 구현 시간이 낮음</li>
+              <li>기존 Agent Room 큐와 바로 호환</li>
+            </ul>
+          </div>
+          <div>
+            <h3>한계</h3>
+            <ul>
+              <li>완전한 데스크톱 앱 느낌은 약함</li>
+              <li>서버 실행 상태를 사용자가 신경써야 함</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+      <article class="option">
+        <div class="option-head">
+          <div class="option-title">
+            <h2>안 2. Windows 런처 앱형</h2>
+            <p>바탕화면 바로가기에서 서버를 시작하고 브라우저 Agent Room을 엽니다.</p>
+          </div>
+          <span class="tag">B안 포함</span>
+        </div>
+        <div class="mock">
+          <div class="launcher">
+            <div class="launcher-card">
+              <p class="launcher-title">JH Agent Room</p>
+              <div class="line mid"></div>
+              <div class="line short"></div>
+              <div class="launcher-button green"></div>
+              <div class="launcher-button"></div>
+              <div class="launcher-button"></div>
+              <div class="line"></div>
+            </div>
+          </div>
+        </div>
+        <div class="notes">
+          <div>
+            <h3>장점</h3>
+            <ul>
+              <li>PC 앱처럼 실행 가능</li>
+              <li>Electron 없이 가볍게 운영</li>
+              <li>바탕화면 바로가기 제공 가능</li>
+            </ul>
+          </div>
+          <div>
+            <h3>한계</h3>
+            <ul>
+              <li>실제 화면은 브라우저 기반</li>
+              <li>업데이트/배포 자동화는 별도 설계 필요</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+      <article class="option">
+        <div class="option-head">
+          <div class="option-title">
+            <h2>안 3. Electron 데스크톱 앱</h2>
+            <p>Agent Room을 독립 창으로 패키징하고 서버 제어를 앱 내부에 넣습니다.</p>
+          </div>
+          <span class="tag">2차 단계</span>
+        </div>
+        <div class="mock">
+          <div class="desktop-frame">
+            <div class="app-titlebar">
+              <span>JH Agent Room Desktop</span>
+              <span>Sync OK</span>
+            </div>
+            <div class="desktop-body">
+              <div class="desktop-nav">
+                <div class="pill active"></div>
+                <div class="pill"></div>
+                <div class="pill"></div>
+                <div class="pill"></div>
+              </div>
+              <div class="desktop-work">
+                <div class="line mid"></div>
+                <div class="block"></div>
+                <div class="block amber"></div>
+                <div class="block blue"></div>
+              </div>
+              <div class="desktop-inspector">
+                <div class="line"></div>
+                <div class="line mid"></div>
+                <div class="line short"></div>
+                <div class="block blue"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="notes">
+          <div>
+            <h3>장점</h3>
+            <ul>
+              <li>진짜 설치형 앱 경험</li>
+              <li>서버 시작/중지 제어를 앱 내부화</li>
+              <li>장기 제품화에 적합</li>
+            </ul>
+          </div>
+          <div>
+            <h3>한계</h3>
+            <ul>
+              <li>패키징과 업데이트 관리 필요</li>
+              <li>초기 유지보수 부담 증가</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+      <article class="option">
+        <div class="option-head">
+          <div class="option-title">
+            <h2>안 4. 운영 관제형 콘솔</h2>
+            <p>채팅방보다 오늘의 작업, 위험, 승인, 검수 상태를 우선하는 지휘 화면입니다.</p>
+          </div>
+          <span class="tag">장기 목표</span>
+        </div>
+        <div class="mock">
+          <div class="console-frame">
+            <div class="console-header">
+              <div class="line mid"></div>
+              <div class="line short"></div>
+            </div>
+            <div class="console-metrics">
+              <div class="metric"><strong>12</strong><span>Today</span></div>
+              <div class="metric"><strong>4</strong><span>Claude</span></div>
+              <div class="metric"><strong>3</strong><span>Codex</span></div>
+              <div class="metric"><strong>2</strong><span>Risk</span></div>
+            </div>
+            <div class="console-timeline">
+              <div>
+                <div class="block"></div>
+                <div class="block amber"></div>
+              </div>
+              <div>
+                <div class="block blue"></div>
+                <div class="block"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="notes">
+          <div>
+            <h3>장점</h3>
+            <ul>
+              <li>대표/운영자 관점에 가장 적합</li>
+              <li>승인, 위험, 검수 대기를 한눈에 파악</li>
+              <li>루틴 자동화와 잘 맞음</li>
+            </ul>
+          </div>
+          <div>
+            <h3>한계</h3>
+            <ul>
+              <li>현재 채팅 중심 UX를 크게 바꿈</li>
+              <li>데이터 모델과 상태 정의 보강 필요</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="recommendation">
+      <strong>Codex 추천: B안 유지</strong>
+      현재 단계에서는 안 1 + 안 2 조합이 가장 안전합니다. 즉, 현재 웹 대시보드를 전문화하고 Windows 런처로 앱처럼 실행하게 만든 뒤, 사용 흐름이 굳으면 안 3 Electron 또는 안 4 관제형 콘솔로 확장하는 순서가 적합합니다.
+    </section>
+  </main>
+</body>
+</html>

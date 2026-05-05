@@ -4,18 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>JH Agent Room</title>
-  <link rel="stylesheet" href="/styles.css?v=20260503-router">
+  <link rel="stylesheet" href="/styles.css?v=20260505-desktop-console">
 </head>
 <body>
   <header class="topbar">
     <div>
-      <p class="eyebrow">JH 통합 구축 시스템</p>
+      <p class="eyebrow">JH 통합 구축 시스템 · Desktop Command Center</p>
       <h1>JH Agent Room</h1>
-      <p class="subtitle">사용자, Claude, Codex가 같은 기준을 보고 공유·구현·검수 피드백을 연결하는 라우팅 대시보드</p>
+      <p class="subtitle">작업 큐, 구현 지시, Codex 검수, 동기화 상태를 한 화면에서 관리하는 로컬 운영 콘솔</p>
     </div>
     <div class="status-pills">
-      <span>기준: JH-SHARED</span>
-      <span>지식: Obsidian Vault</span>
+      <span>JH-SHARED</span>
+      <span>Obsidian Vault</span>
       <a id="open-harness" class="top-action" href="http://127.0.0.1:3200" target="_blank" rel="noreferrer">Harness 열기</a>
       <button id="focus-compose" class="top-action" type="button">새 공유</button>
       <button id="toggle-tools" class="top-action" type="button" aria-pressed="false">작업 도구</button>
@@ -49,8 +49,8 @@
     <section class="chat-panel">
       <div class="chat-header">
         <div>
-          <h2>작업 공유</h2>
-          <p>먼저 작업 내용을 공유하고, 필요한 경우에만 큐·루프·운영 도구를 엽니다.</p>
+          <h2>작업 관제</h2>
+          <p>Claude 구현, Codex 검수, 사용자 승인 흐름을 큐 기준으로 정리합니다.</p>
         </div>
                 <div class="chat-actions">
           <label class="toggle"><input id="auto-refresh" type="checkbox" checked> 자동 새로고침</label>
@@ -268,6 +268,6 @@
     </aside>
   </main>
 
-  <script src="/app.js?v=20260503-loop-cleanup"></script>
+  <script src="/app.js?v=20260505-desktop-console"></script>
 </body>
 </html>
