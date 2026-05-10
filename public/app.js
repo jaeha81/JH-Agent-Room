@@ -253,6 +253,19 @@ function shortId(value) {
   return value ? String(value).slice(0, 8) : ''
 }
 
+function isAutoAckClient(message) {
+  return Boolean(message.autoAck) || (typeof message.body === 'string' && message.body.startsWith('[Agent Room'))
+}
+
+function responseMessagesFor(loopId) {
+  return currentMessages.filter((message) => {
+    if (!loopId) return false
+    if (message.speaker === 'user') return false
+    if (isAutoAckClient(message)) return false
+    return (message.loopId || message.id) === loopId || message.replyTo === loopId
+  })
+}
+
 function updateStatusUI(message) {
   const activeStatus = message && message.status !== 'logged' ? (message.status || 'todo') : null
   for (const button of statusButtons) {
@@ -317,6 +330,71 @@ function renderRecentRouting() {
   recentRoutingEl.hidden = !message
   if (!message) return
   recentRoutingTitleEl.textContent = `${labels[message.target || 'room'] || '공유'} · ${messageTitle(message)}`
+}
+
+function mountAnswerPanel() {
+  if (document.querySelector('#answer-panel')) return
+  const workspace = document.querySelector('.workspace')
+  if (!workspace) return
+  const panel = document.createElement('section')
+  panel.id = 'answer-panel'
+  panel.className = 'answer-panel'
+  panel.setAttribute('aria-label', '최근 답변')
+  panel.innerHTML = `
+    <div class="answer-head">
+      <div>
+        <span>답변함</span>
+        <h3>최근 답변</h3>
+      </div>
+      <button type="button" data-answer-view="all">전체 작업 보기</button>
+    </div>
+    <div id="answer-list" class="answer-list"></div>
+  `
+  workspace.insertAdjacentElement('beforebegin', panel)
+  panel.querySelector('[data-answer-view="all"]').addEventListener('click', () => setWorkView('all'))
+}
+
+function renderAnswerPanel(messages) {
+  const list = document.querySelector('#answer-list')
+  if (!list) return
+  const requests = messages
+    .filter((message) => message.speaker === 'user')
+    .slice(-5)
+    .reverse()
+
+  list.innerHTML = ''
+  if (requests.length === 0) {
+    const empty = document.createElement('div')
+    empty.className = 'answer-empty'
+    empty.textContent = '아직 요청이 없습니다.'
+    list.appendChild(empty)
+    return
+  }
+
+  for (const request of requests) {
+    const loopId = request.loopId || request.id
+    const replies = responseMessagesFor(loopId)
+    const latestReply = replies.at(-1)
+    const item = document.createElement('button')
+    item.type = 'button'
+    item.className = `answer-item ${latestReply ? 'has-reply' : 'pending'}`
+    item.innerHTML = `
+      <span>${latestReply ? '답변 완료' : '답변 대기'}</span>
+      <strong></strong>
+      <small></small>
+    `
+    item.querySelector('strong').textContent = messageTitle(request)
+    item.querySelector('small').textContent = latestReply
+      ? `${labels[latestReply.speaker] || latestReply.speaker}: ${messageTitle(latestReply)}`
+      : '자동 접수만 완료되었습니다. 실제 답변은 아직 없습니다.'
+    item.addEventListener('click', () => {
+      activeMessageId = latestReply ? latestReply.id : request.id
+      setWorkView('all')
+      selectMessage(latestReply || request)
+      renderMessages(currentMessages)
+    })
+    list.appendChild(item)
+  }
 }
 
 function prepareBlockedFeedback(message) {
@@ -609,6 +687,7 @@ function renderPayload(payload) {
   trackIncomingMessages(payload.messages)
   renderOpsMetrics(payload.messages)
   renderMessages(payload.messages)
+  renderAnswerPanel(payload.messages)
   renderQueues(payload.messages)
   renderLoops(payload.loops || [])
   renderRecentRouting()
@@ -951,6 +1030,7 @@ for (const button of filterButtons) {
 
 mountYesterdayWorkView()
 mountDevelopmentStudio()
+mountAnswerPanel()
 localizeStaticChrome()
 setWorkView('yesterday')
 updateTargetUI()
