@@ -1653,3 +1653,277 @@ input {
     grid-template-columns: 1fr;
   }
 }
+
+/* Simple scroll-first layout */
+html,
+body {
+  height: auto;
+  min-height: 100%;
+}
+
+body {
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #edf1f5;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  min-height: auto;
+}
+
+.layout,
+body.show-ops .layout {
+  display: block;
+  width: 100%;
+  max-width: 1280px;
+  height: auto;
+  min-height: 0;
+  margin: 0 auto;
+  padding: 14px;
+  overflow: visible;
+  background: transparent;
+}
+
+.chat-panel {
+  min-height: 0;
+  overflow: visible;
+  border: 1px solid var(--app-line);
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 12px 28px rgba(15, 20, 26, 0.08);
+}
+
+.side-panel.ops-panel,
+.detail-panel.ops-panel {
+  display: none;
+}
+
+body.show-ops .side-panel.ops-panel,
+body.show-ops .detail-panel.ops-panel {
+  display: block;
+  margin-bottom: 12px;
+  border-radius: 10px;
+}
+
+.dev-studio {
+  grid-template-columns: 1fr;
+  padding: 12px;
+}
+
+.studio-board {
+  grid-template-columns: 1fr;
+}
+
+.pipeline {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.proposal-grid {
+  display: none;
+}
+
+body.show-tools .proposal-grid {
+  display: grid;
+}
+
+.queue-shortcuts {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.ops-metrics {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  padding: 10px 12px 0;
+}
+
+.quick-targets {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 10px 12px 0;
+}
+
+.filters,
+.work-views {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.answer-panel {
+  margin: 10px 12px 0;
+}
+
+.answer-list {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 10px 12px 0;
+}
+
+.conversation-panel {
+  display: none;
+}
+
+body.show-tools .conversation-panel {
+  display: flex;
+}
+
+.messages {
+  max-height: none;
+  min-height: 180px;
+  overflow: visible;
+}
+
+.message-status-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.composer {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  grid-template-columns: 170px minmax(0, 1fr) 92px;
+  border: 1px solid var(--app-line);
+  border-radius: 0 0 10px 10px;
+}
+
+.composer textarea {
+  min-height: 72px;
+}
+
+@media (max-width: 820px) {
+  .topbar {
+    position: static;
+  }
+
+  .status-pills,
+  .chat-actions,
+  .filters,
+  .work-views {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .pipeline,
+  .queue-shortcuts,
+  .ops-metrics,
+  .quick-targets,
+  .answer-list {
+    grid-template-columns: 1fr;
+  }
+
+  .composer {
+    position: static;
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Focused operator console */
+.chat-header {
+  padding: 14px 16px;
+}
+
+.chat-header p {
+  margin-top: 4px;
+}
+
+.dev-studio,
+.studio-board,
+.proposal-grid,
+.pipeline {
+  display: none;
+}
+
+body.show-tools .dev-studio,
+body.show-tools .studio-board,
+body.show-tools .proposal-grid,
+body.show-tools .pipeline {
+  display: grid;
+}
+
+.ops-metrics {
+  grid-template-columns: repeat(5, minmax(96px, 1fr));
+}
+
+.ops-metric {
+  min-height: 56px;
+  padding: 10px 12px;
+}
+
+.ops-metric strong {
+  font-size: 24px;
+}
+
+.quick-targets {
+  display: none;
+}
+
+body.show-tools .quick-targets {
+  display: grid;
+}
+
+.filters,
+.work-views {
+  gap: 6px;
+}
+
+.filters {
+  padding-top: 10px;
+}
+
+.work-views {
+  padding-top: 6px;
+}
+
+.answer-panel {
+  margin-top: 8px;
+}
+
+.answer-list {
+  grid-template-columns: 1fr;
+}
+
+.workspace {
+  padding-top: 8px;
+}
+
+.messages {
+  min-height: 120px;
+  padding: 10px;
+}
+
+.composer {
+  position: static;
+  grid-template-columns: 150px minmax(0, 1fr) 82px;
+  margin-top: 10px;
+  border-radius: 8px;
+}
+
+.composer textarea {
+  min-height: 92px;
+}
+
+.composer-meta select {
+  height: 42px;
+}
+
+.composer button[type="submit"] {
+  min-height: 92px;
+}
+
+@media (max-width: 820px) {
+  .ops-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .composer {
+    grid-template-columns: 1fr;
+  }
+
+  .composer button[type="submit"] {
+    min-height: 48px;
+  }
+}
