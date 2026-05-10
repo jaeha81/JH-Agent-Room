@@ -23,6 +23,8 @@ const SHARED_DIR = process.env.AGENT_ROOM_SHARED_DIR || 'G:\\내 드라이브\\J
 const OBSIDIAN_VAULT_DIR = process.env.OBSIDIAN_VAULT_DIR || 'G:\\내 드라이브\\OBSIDIAN-SECOND'
 const HARNESS_DASHBOARD_URL = process.env.HARNESS_DASHBOARD_URL || 'http://127.0.0.1:3200'
 const AUTO_ACK_ENABLED = process.env.AGENT_ROOM_AUTO_ACK !== '0'
+const AUTO_REPLY_ENABLED = process.env.AGENT_ROOM_AUTO_REPLY !== '0'
+const REVIEW_TIMEOUT_MS = Number(process.env.REVIEW_TIMEOUT_MS || 30 * 60 * 1000)
 const SYSTEM_DIR = path.join(SHARED_DIR, '00_SYSTEM')
 const AGENT_ROOM_DIR = path.join(SHARED_DIR, '01_AGENT_ROOM')
 const LOGS_DIR = path.join(SHARED_DIR, '03_LOGS')
@@ -163,6 +165,9 @@ function appendMessage({ speaker, kind, body, target = 'room', status = 'todo', 
   const normalizedReplyTo = normalizeMessageId(replyTo)
   if (normalizedReplyTo) message.replyTo = normalizedReplyTo
   if (autoAck) message.autoAck = true
+  if (speaker === 'codex' && kind === 'review' && !autoAck) {
+    message.reviewDeadline = new Date(Date.now() + REVIEW_TIMEOUT_MS).toISOString()
+  }
   appendJsonLine(LOG_FILE, message)
   return message
 }
@@ -207,6 +212,137 @@ function appendAutoAcks(message) {
     replyTo: message.id,
     autoAck: true,
   }))
+}
+
+function shouldAutoReply(message, kind, body) {
+  if (!AUTO_REPLY_ENABLED) return false
+  if (message.speaker !== 'user') return false
+  if (isSyncOrUpdate(kind, body)) return false
+  return ['room', 'both', 'codex', 'github', 'local'].includes(message.target || 'room')
+}
+
+function localAutoReply(message) {
+  const body = message.body || ''
+  const hasPath = /[A-Z]:[\\/][^\r\n]+/i.test(body)
+  const mentionsSpreadsheet = /엑셀|excel|xlsx|xls|csv/i.test(body)
+  const mentionsFile = /파일|문서|열어|불러/i.test(body)
+  const mentionsGithub = /github|git|커밋|브랜치|commit|branch|pr/i.test(body)
+  const mentionsLocal = /로컬|서버|포트|localhost|127\.0\.0\.1|브라우저/i.test(body)
+  const target = targetLabels[message.target] || message.target || '공유'
+  const requestLine = body.split(/\r?\n/).find(Boolean) || '요청 내용 없음'
+
+  if (mentionsSpreadsheet) {
+    return [
+      '[사용자 확인 요약]',
+      '엑셀 파일 확인은 가능합니다. 지금 필요한 핵심은 파일 전체 경로입니다.',
+      '',
+      '[Claude 작업 지침]',
+      '파일 경로가 들어오면 사용 목적, 결과 형식, 필요한 후속 작업을 정리합니다.',
+      '',
+      '[Codex 검수/실행 지침]',
+      hasPath
+        ? '전달된 경로 기준으로 파일 존재 여부, 시트 목록, 행/열 구조, 요약 가능 범위를 확인합니다.'
+        : '파일 경로가 없으므로 실행하지 않고 사용자에게 경로를 요청합니다. 예: G:\\내 드라이브\\폴더\\파일명.xlsx',
+      '',
+      '[사용자가 확인할 포인트]',
+      '열어야 할 엑셀 파일의 전체 경로를 Agent Room에 다시 입력해 주세요.',
+    ].join('\n')
+  }
+
+  if (mentionsGithub) {
+    return [
+      '[사용자 확인 요약]',
+      'GitHub/git 상태 확인 요청으로 분류했습니다.',
+      '',
+      '[Claude 작업 지침]',
+      '구현 또는 운영 판단이 필요하면 변경 목적, 대상 브랜치, 커밋 후보를 정리합니다.',
+      '',
+      '[Codex 검수/실행 지침]',
+      '저장소 경로, 브랜치, 커밋, PR 번호가 있으면 상태와 위험 파일을 독립 확인합니다.',
+      '',
+      '[사용자가 확인할 포인트]',
+      '확인할 저장소 경로 또는 PR/커밋 정보를 입력해 주세요.',
+    ].join('\n')
+  }
+
+  if (mentionsLocal) {
+    return [
+      '[사용자 확인 요약]',
+      '로컬 서버/포트/브라우저 확인 요청으로 분류했습니다.',
+      '',
+      '[Claude 작업 지침]',
+      '서버 실행이나 운영 흐름 문제가 있으면 실행 절차와 기대 상태를 정리합니다.',
+      '',
+      '[Codex 검수/실행 지침]',
+      'URL 또는 프로젝트 경로를 기준으로 응답 여부, 콘솔 오류, 화면 상태를 확인합니다.',
+      '',
+      '[사용자가 확인할 포인트]',
+      '확인할 URL 또는 프로젝트 경로를 입력해 주세요. 예: http://127.0.0.1:3100',
+    ].join('\n')
+  }
+
+  if (mentionsFile) {
+    return [
+      '[사용자 확인 요약]',
+      '파일 확인 요청으로 분류했습니다.',
+      '',
+      '[Claude 작업 지침]',
+      '파일을 어떤 목적으로 사용할지, 결과를 어떤 형식으로 받을지 정리합니다.',
+      '',
+      '[Codex 검수/실행 지침]',
+      hasPath
+        ? '전달된 경로 기준으로 파일 존재 여부와 읽기 가능 여부를 확인합니다.'
+        : '파일 경로가 없으므로 실행하지 않고 사용자에게 경로를 요청합니다.',
+      '',
+      '[사용자가 확인할 포인트]',
+      '드라이브부터 시작하는 전체 파일 경로를 입력해 주세요.',
+    ].join('\n')
+  }
+
+  return [
+    '[사용자 확인 요약]',
+    `요청을 ${target} 작업으로 접수했습니다: ${requestLine}`,
+    '',
+    '[Claude 작업 지침]',
+    '구현, 운영 정리, 다음 실행 계획이 필요한지 판단하고 필요한 경우 작업 큐에서 처리합니다.',
+    '',
+    '[Codex 검수/실행 지침]',
+    '검수, 로컬 확인, 파일/서버/Git 상태 확인이 필요한지 판단하고 위험 요소를 사용자에게 직접 보고합니다.',
+    '',
+    '[사용자가 확인할 포인트]',
+    '실행할 파일 경로, 저장소 경로, URL, 원하는 결과 형식을 함께 주면 바로 다음 단계로 이어갈 수 있습니다.',
+  ].join('\n')
+}
+
+function scheduleAutoReply(message) {
+  setTimeout(() => {
+    try {
+      appendMessage({
+        speaker: 'codex',
+        kind: 'review',
+        target: 'room',
+        taskType: message.taskType || 'question',
+        status: 'done',
+        loopId: message.loopId || message.id,
+        replyTo: message.id,
+        body: localAutoReply(message),
+      })
+      updateMessageStatus(message.id, 'done')
+      scheduleBroadcast('auto-reply')
+    } catch (error) {
+      appendMessage({
+        speaker: 'codex',
+        kind: 'review',
+        target: 'room',
+        taskType: message.taskType || 'question',
+        status: 'blocked',
+        loopId: message.loopId || message.id,
+        replyTo: message.id,
+        body: `Codex 자동 답변 실패: ${error.message || '알 수 없는 오류'}`,
+      })
+      scheduleBroadcast('auto-reply-error')
+    }
+  }, 0)
 }
 
 function routeMessage(input, source = 'api') {
@@ -401,6 +537,8 @@ function safePayload() {
     harnessDashboardUrl: HARNESS_DASHBOARD_URL,
     autoAckEnabled: AUTO_ACK_ENABLED,
     agentPostingEnabled: Boolean(process.env.ADMIN_SECRET),
+    autoReplyEnabled: AUTO_REPLY_ENABLED,
+    autoReplyMode: 'local',
   }
 }
 
@@ -658,6 +796,9 @@ async function handleMessagePost(req, res) {
     }
 
     const { message, acks } = routeMessage(input, 'api')
+    if (shouldAutoReply(message, kind, body)) {
+      scheduleAutoReply(message)
+    }
 
     if (isSyncOrUpdate(kind, body)) {
       const snapshot = currentPcSnapshot(kind === 'sync' ? 'sync' : 'update')
@@ -842,6 +983,20 @@ async function handleStatusPost(req, res) {
   }
 }
 
+function handleOverdueReviews(res) {
+  const now = new Date().toISOString()
+  const messages = readMessages()
+  const overdue = messages.filter((m) =>
+    m.speaker === 'codex' &&
+    m.kind === 'review' &&
+    m.status === 'todo' &&
+    !m.autoAck &&
+    m.reviewDeadline &&
+    m.reviewDeadline < now
+  )
+  sendJson(res, 200, { count: overdue.length, items: overdue })
+}
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`)
 
@@ -854,6 +1009,7 @@ const server = http.createServer((req, res) => {
   if (url.pathname === '/api/inbox' && req.method === 'GET') return handleInboxGet(url, res)
   if (url.pathname === '/api/inbox/scan' && req.method === 'POST') return handleInboxScan(url, res)
   if (url.pathname === '/api/events' && req.method === 'GET') return handleEvents(req, res)
+  if (url.pathname === '/api/overdue-reviews' && req.method === 'GET') return handleOverdueReviews(res)
 
   const filePath = url.pathname === '/' ? path.join(PUBLIC_DIR, 'index.html') : path.normalize(path.join(PUBLIC_DIR, url.pathname))
   if (!filePath.startsWith(PUBLIC_DIR)) {
