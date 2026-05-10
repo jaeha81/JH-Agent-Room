@@ -1927,3 +1927,139 @@ body.show-tools .quick-targets {
     min-height: 48px;
   }
 }
+
+/* User-first console */
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-header {
+  order: 1;
+}
+
+.composer {
+  order: 2;
+  grid-template-columns: 86px 145px minmax(0, 1fr) 82px;
+  margin: 12px;
+  border-radius: 10px;
+  border: 1px solid #cdd7e2;
+  background: #f8fafc;
+  box-shadow: inset 4px 0 0 var(--app-blue);
+}
+
+.composer::before {
+  content: "작업 요청";
+  align-self: center;
+  color: var(--app-blue);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.composer-meta {
+  min-width: 0;
+}
+
+.composer-meta .helper-text {
+  display: none;
+}
+
+.composer textarea {
+  min-height: 104px;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.composer button[type="submit"] {
+  min-height: 104px;
+  font-size: 16px;
+}
+
+.ops-metrics {
+  order: 4;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 0 12px 0;
+}
+
+.ops-metric {
+  min-height: 52px;
+}
+
+.ops-metric:nth-child(3) {
+  display: none;
+}
+
+.answer-panel {
+  order: 3;
+  margin: 12px;
+}
+
+.answer-head {
+  padding: 12px;
+}
+
+.answer-head button {
+  height: 40px;
+  padding: 0 12px;
+}
+
+.answer-item {
+  min-height: 76px;
+  padding: 12px;
+}
+
+.workspace,
+.filters,
+.work-views,
+.recent-routing {
+  display: none;
+}
+
+body.show-tools .workspace {
+  display: grid;
+}
+
+body.show-tools .filters,
+body.show-tools .work-views,
+body.show-tools .recent-routing {
+  display: flex;
+}
+
+.chat-actions .toggle,
+.chat-actions #quick-sync,
+.chat-actions #quick-update,
+.chat-actions #export-log {
+  display: none;
+}
+
+body.show-tools .chat-actions .toggle,
+body.show-tools .chat-actions #quick-sync,
+body.show-tools .chat-actions #quick-update,
+body.show-tools .chat-actions #export-log {
+  display: inline-flex;
+}
+
+.messages {
+  max-height: 52vh;
+  overflow: auto;
+}
+
+@media (max-width: 820px) {
+  .composer {
+    grid-template-columns: 1fr;
+    margin: 10px;
+  }
+
+  .composer::before {
+    align-self: start;
+  }
+
+  .ops-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0 10px;
+  }
+
+  .answer-panel {
+    margin: 10px;
+  }
+}

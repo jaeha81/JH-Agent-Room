@@ -351,7 +351,12 @@ function mountAnswerPanel() {
     <div id="answer-list" class="answer-list"></div>
   `
   workspace.insertAdjacentElement('beforebegin', panel)
-  panel.querySelector('[data-answer-view="all"]').addEventListener('click', () => setWorkView('all'))
+  const allWorkButton = panel.querySelector('[data-answer-view="all"]')
+  allWorkButton.textContent = '\uC0C1\uC138 \uC791\uC5C5 \uBCF4\uAE30'
+  allWorkButton.addEventListener('click', () => {
+    setToolPanelVisible(true)
+    setWorkView('all')
+  })
 }
 
 function renderAnswerPanel(messages) {
@@ -835,6 +840,13 @@ function toggleBodyPanel(button, className) {
   button.setAttribute('aria-pressed', String(enabled))
 }
 
+function setToolPanelVisible(visible) {
+  document.body.classList.toggle('show-tools', visible)
+  if (toggleToolsEl) {
+    toggleToolsEl.setAttribute('aria-pressed', String(visible))
+  }
+}
+
 function applyQuickTarget(button) {
   currentTarget = button.dataset.quickTarget
   kindEl.value = button.dataset.quickKind || 'direction'
@@ -985,7 +997,7 @@ if (focusComposeEl) {
   focusComposeEl.addEventListener('click', () => bodyEl.focus())
 }
 if (toggleToolsEl) {
-  toggleToolsEl.addEventListener('click', () => toggleBodyPanel(toggleToolsEl, 'show-tools'))
+  toggleToolsEl.addEventListener('click', () => setToolPanelVisible(!document.body.classList.contains('show-tools')))
 }
 if (toggleOpsEl) {
   toggleOpsEl.addEventListener('click', () => toggleBodyPanel(toggleOpsEl, 'show-ops'))
