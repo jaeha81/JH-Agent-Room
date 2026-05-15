@@ -36,6 +36,8 @@ const LEGACY_LOG_FILE = path.join(SHARED_DIR, 'agent-room-messages.jsonl')
 const SYNC_STATE_FILE = path.join(LOGS_DIR, 'sync-state.jsonl')
 const ROUTE_INGEST_LOG = path.join(LOGS_DIR, 'agent-room-route-ingest.jsonl')
 const PUBLIC_DIR = path.join(__dirname, 'public')
+const KNOWLEDGE_DIR = path.join(OBSIDIAN_VAULT_DIR, 'agent-room-knowledge')
+const CLAUDE_KNOWLEDGE_DIR = process.env.CLAUDE_KNOWLEDGE_DIR || 'C:\\Users\\user1\\Documents\\OBSIDIAN-SECOND\\claude-knowledge'
 
 const syncTargets = [
   { label: '동기화 프로토콜', file: path.join(SYSTEM_DIR, 'sync-protocol.md') },
@@ -87,6 +89,7 @@ function ensureStore() {
   fs.mkdirSync(ROUTE_INBOX_DIR, { recursive: true })
   fs.mkdirSync(ROUTE_PROCESSED_DIR, { recursive: true })
   fs.mkdirSync(ROUTE_FAILED_DIR, { recursive: true })
+  fs.mkdirSync(KNOWLEDGE_DIR, { recursive: true })
 
   if (!fs.existsSync(LOG_FILE) && fs.existsSync(LEGACY_LOG_FILE)) {
     fs.copyFileSync(LEGACY_LOG_FILE, LOG_FILE)
@@ -221,7 +224,117 @@ function shouldAutoReply(message, kind, body) {
   return ['room', 'both', 'codex', 'github', 'local'].includes(message.target || 'room')
 }
 
+const DEV_KEYWORDS = /구현|개발|수정|리팩토링|추가|버그|기능|API|DB|서버|배포|빌드|파이프라인|스크립트|클래스|함수|모듈|endpoint|route|query|schema|migration|install|refactor|fix|feature|build|deploy/i
+
+function isDevRequest(message) {
+  if (message.autoAck) return false
+  if (message.kind === 'sync') return false
+  if (isSyncOrUpdate(message.kind, message.body)) return false
+  const body = message.body || ''
+  if (DEV_KEYWORDS.test(body)) return true
+  if (message.kind === 'implementation' || message.kind === 'plan') return true
+  return false
+}
+
+function redactSensitiveData(text) {
+  return text
+    .replace(/sk-[A-Za-z0-9]{20,}/g, '[REDACTED]')
+    .replace(/AKIA[A-Z0-9]{16}/g, '[REDACTED]')
+    .replace(/AIza[0-9A-Za-z_\-]{35}/g, '[REDACTED]')
+    .replace(/(secret|password|passwd|pwd|token|key|credential)\s*[:=]\s*['"]?[^\s'"]{8,}['"]?/gi, '$1=[REDACTED]')
+    .replace(/Bearer\s+[A-Za-z0-9._~+/\-]+=*/g, 'Bearer [REDACTED]')
+}
+
+function buildGoalModeDispatch(message) {
+  const body = message.body || ''
+  const firstLine = body.split(/\r?\n/).find(Boolean) || '요청 내용 없음'
+  const kind = message.kind || 'question'
+
+  let taskType
+  if (/계획|설계|아키텍처|구조/i.test(body)) {
+    taskType = 'plan'
+  } else if (kind === 'implementation' || /구현|개발|추가|수정|리팩터|빌드|배포/i.test(body)) {
+    taskType = 'implementation'
+  } else if (kind === 'review') {
+    taskType = 'review'
+  } else {
+    taskType = 'question'
+  }
+
+  const taskTypeKo = { plan: '계획/설계', implementation: '구현/개발', review: '검수/확인', question: '질문/운영' }[taskType]
+
+  return [
+    '[Goal Mode Dispatch]',
+    '',
+    '## Task Type',
+    `${taskType} — ${taskTypeKo}`,
+    '',
+    '## Execution Route',
+    '- Claude: You are operating in JH Goal Mode.',
+    `  요청: ${firstLine}`,
+    '  구현 관점에서 대상 파일, 변경 범위, 완료 기준을 정리하고 실행 계획을 수립합니다.',
+    '- Codex: /goal',
+    `  요청: ${firstLine}`,
+    '  구현 후 문법/타입 오류, API 동작, 사이드 이펙트 부재를 독립 검수합니다.',
+    '',
+    '## Verification Checklist',
+    '- [ ] 구현 대상 파일 존재 확인',
+    '- [ ] 문법/타입 오류 없음 (node --check 또는 tsc)',
+    '- [ ] API 또는 CLI로 실제 동작 확인',
+    '- [ ] 사이드 이펙트 없음 (기존 기능 회귀 없음)',
+    '',
+    '## Stop Condition',
+    body.length > 20 ? `${firstLine} — 사용자 승인 또는 검수 PASS` : '사용자 승인',
+  ].join('\n')
+}
+
+function saveObsidianKnowledge(message, goalText) {
+  try {
+    const body = message.body || ''
+    const firstLine = body.split(/\r?\n/).find(Boolean) || '요청'
+    const slug = firstLine
+      .replace(/\s+/g, '-')
+      .replace(/[^A-Za-z0-9가-힣\-]/g, '')
+      .slice(0, 40)
+    const dateStr = new Date().toISOString().slice(0, 10)
+    const fileName = `${dateStr}-${slug || 'request'}.md`
+    const filePath = path.join(KNOWLEDGE_DIR, fileName)
+
+    const kind = message.kind || 'question'
+    let taskType
+    if (/계획|설계|아키텍처|구조/i.test(body)) taskType = 'plan'
+    else if (kind === 'implementation' || /구현|개발|추가|수정|리팩터|빌드|배포/i.test(body)) taskType = 'implementation'
+    else if (kind === 'review') taskType = 'review'
+    else taskType = 'question'
+
+    const title = firstLine.slice(0, 80)
+    const content = [
+      '---',
+      `title: ${title}`,
+      `tags: [agent-room, goal-mode, ${taskType}]`,
+      `createdAt: ${new Date().toISOString()}`,
+      `messageId: ${message.id}`,
+      `speaker: ${message.speaker}`,
+      `target: ${message.target}`,
+      '---',
+      '',
+      '## 원본 요청',
+      '',
+      redactSensitiveData(body),
+      '',
+      '## Goal Mode Dispatch',
+      '',
+      goalText,
+    ].join('\n')
+
+    fs.writeFileSync(filePath, content, 'utf8')
+  } catch {
+    // Non-critical: knowledge save failure should not block message flow
+  }
+}
+
 function localAutoReply(message) {
+  if (isDevRequest(message)) return buildGoalModeDispatch(message)
   const body = message.body || ''
   const hasPath = /[A-Z]:[\\/][^\r\n]+/i.test(body)
   const mentionsSpreadsheet = /엑셀|excel|xlsx|xls|csv/i.test(body)
@@ -317,6 +430,8 @@ function localAutoReply(message) {
 function scheduleAutoReply(message) {
   setTimeout(() => {
     try {
+      const replyBody = localAutoReply(message)
+      if (isDevRequest(message)) saveObsidianKnowledge(message, replyBody)
       appendMessage({
         speaker: 'codex',
         kind: 'review',
@@ -325,7 +440,7 @@ function scheduleAutoReply(message) {
         status: 'done',
         loopId: message.loopId || message.id,
         replyTo: message.id,
-        body: localAutoReply(message),
+        body: replyBody,
       })
       updateMessageStatus(message.id, 'done')
       scheduleBroadcast('auto-reply')
@@ -448,9 +563,23 @@ function readJsonLines(file) {
     .map((line) => JSON.parse(line))
 }
 
+function isAgentRoomMessage(row) {
+  return Boolean(
+    row &&
+    typeof row === 'object' &&
+    typeof row.id === 'string' &&
+    ['user', 'claude', 'codex'].includes(row.speaker) &&
+    ['direction', 'implementation', 'review', 'sync'].includes(row.kind) &&
+    typeof row.body === 'string' &&
+    typeof row.createdAt === 'string'
+  )
+}
+
 function readMessages() {
   ensureStore()
-  return readJsonLines(LOG_FILE).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+  return readJsonLines(LOG_FILE)
+    .filter(isAgentRoomMessage)
+    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
 }
 
 function writeJsonLines(file, rows) {
@@ -983,6 +1112,53 @@ async function handleStatusPost(req, res) {
   }
 }
 
+function scanKnowledgeDir(dir, q, source, results) {
+  let entries
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true })
+  } catch {
+    return
+  }
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name)
+    if (entry.isDirectory()) {
+      scanKnowledgeDir(fullPath, q, source, results)
+    } else if (entry.name.endsWith('.md')) {
+      try {
+        const content = fs.readFileSync(fullPath, 'utf8')
+        if (!content.toLowerCase().includes(q)) continue
+
+        const titleMatch = content.match(/^title:\s*(.+)$/m)
+        const tagsMatch = content.match(/^tags:\s*\[(.+)\]$/m)
+        const createdAtMatch = content.match(/^createdAt:\s*(.+)$/m)
+        const title = titleMatch ? titleMatch[1].trim() : entry.name
+        const tags = tagsMatch ? tagsMatch[1].split(',').map((t) => t.trim()) : []
+        const createdAt = createdAtMatch ? createdAtMatch[1].trim() : ''
+
+        const lines = content.split('\n')
+        const matchIdx = lines.findIndex((l) => l.toLowerCase().includes(q))
+        const excerptLines = lines.slice(Math.max(0, matchIdx - 1), matchIdx + 2)
+        const excerpt = excerptLines.join('\n').slice(0, 300)
+
+        results.push({ file: path.relative(dir, fullPath), source, title, tags, excerpt, createdAt })
+      } catch {
+        // skip unreadable files
+      }
+    }
+  }
+}
+
+function handleKnowledgeSearch(url, res) {
+  const q = (url.searchParams.get('q') || '').toLowerCase().trim()
+  if (!q) return sendJson(res, 400, { error: 'q parameter required' })
+
+  const results = []
+  scanKnowledgeDir(KNOWLEDGE_DIR, q, 'agent-room', results)
+  scanKnowledgeDir(CLAUDE_KNOWLEDGE_DIR, q, 'claude-knowledge', results)
+
+  sendJson(res, 200, { query: q, results })
+}
+
 function handleOverdueReviews(res) {
   const now = new Date().toISOString()
   const messages = readMessages()
@@ -1010,6 +1186,7 @@ const server = http.createServer((req, res) => {
   if (url.pathname === '/api/inbox/scan' && req.method === 'POST') return handleInboxScan(url, res)
   if (url.pathname === '/api/events' && req.method === 'GET') return handleEvents(req, res)
   if (url.pathname === '/api/overdue-reviews' && req.method === 'GET') return handleOverdueReviews(res)
+  if (url.pathname === '/api/knowledge/search' && req.method === 'GET') return handleKnowledgeSearch(url, res)
 
   const filePath = url.pathname === '/' ? path.join(PUBLIC_DIR, 'index.html') : path.normalize(path.join(PUBLIC_DIR, url.pathname))
   if (!filePath.startsWith(PUBLIC_DIR)) {
