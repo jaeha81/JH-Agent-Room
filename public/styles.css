@@ -192,6 +192,47 @@ button:hover { background: #145f39; }
   white-space: nowrap;
 }
 
+.reply-notice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 0.8fr) minmax(0, 1.8fr);
+  align-items: center;
+  gap: 10px;
+  width: calc(100% - 32px);
+  min-height: 46px;
+  margin: 0 16px 10px;
+  border: 1px solid #9bd7bd;
+  border-radius: 8px;
+  background: #f0fbf6;
+  color: var(--ink);
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.reply-notice[hidden] {
+  display: none;
+}
+
+.reply-notice span {
+  border-radius: 999px;
+  background: var(--green);
+  color: #fff;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.reply-notice strong,
+.reply-notice small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reply-notice small {
+  color: var(--muted);
+}
+
 .composer { display: grid; grid-template-columns: 170px minmax(0, 1fr) 92px; align-items: stretch; gap: 10px; padding: 14px 16px; border-top: 1px solid var(--line); background: #f8faf8; }
 select, input, textarea { background: white; color: var(--ink); padding: 0 12px; }
 textarea {
@@ -646,6 +687,40 @@ textarea {
   font-family: Arial, 'Noto Sans KR', sans-serif;
   font-size: 14px;
   line-height: 1.65;
+}
+
+.reply-command {
+  margin-top: 12px;
+  border: 1px solid #d7dee7;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 10px;
+}
+
+.reply-command strong,
+.reply-command p,
+.reply-command code {
+  display: block;
+}
+
+.reply-command p {
+  margin: 5px 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.reply-command code {
+  max-height: 150px;
+  overflow: auto;
+  border-radius: 8px;
+  background: #101828;
+  color: #f8fafc;
+  padding: 10px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 @media (max-width: 640px) {
@@ -1513,14 +1588,35 @@ body.show-ops .layout {
   white-space: normal;
 }
 
-.answer-item.has-reply {
+.answer-item.has-reply,
+.answer-item.answer-done {
   border-color: #9bd7bd;
   background: #f0fbf6;
 }
 
-.answer-item.pending {
+.answer-item.pending,
+.answer-item.answer-pending,
+.answer-item.answer-no-answer {
   border-color: #f1d39a;
   background: #fffaf0;
+}
+
+.answer-item.answer-processing {
+  border-color: #b8d4f8;
+  background: #f2f7ff;
+}
+
+.answer-item.answer-blocked {
+  border-color: #f4b2aa;
+  background: #fff3f1;
+}
+
+.answer-item.answer-no-answer span {
+  color: #a06012;
+}
+
+.answer-item.answer-blocked span {
+  color: var(--red);
 }
 
 .answer-item span,

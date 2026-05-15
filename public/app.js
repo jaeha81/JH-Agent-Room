@@ -96,8 +96,14 @@ let realtimeConnected = false
 let payloadInitialized = false
 let knownMessageIds = new Set()
 let highlightedMessageIds = new Set()
+let unreadReplyIds = new Set()
+let acknowledgedReplyIds = new Set()
+let pendingReplyLoopIds = new Set()
 let latestRoutedMessageId = null
+let latestUnreadReplyId = null
 let pendingLoopLink = null
+let userMessageSent = false
+let latestSubmittedBody = ''
 
 const quickStatuses = ['todo', 'working', 'blocked', 'done']
 
@@ -257,6 +263,10 @@ function isAutoAckClient(message) {
   return Boolean(message.autoAck) || (typeof message.body === 'string' && message.body.startsWith('[Agent Room'))
 }
 
+function isRealReply(message) {
+  return message && message.speaker !== 'user' && !isAutoAckClient(message)
+}
+
 function responseMessagesFor(loopId) {
   return currentMessages.filter((message) => {
     if (!loopId) return false
@@ -264,6 +274,59 @@ function responseMessagesFor(loopId) {
     if (isAutoAckClient(message)) return false
     return (message.loopId || message.id) === loopId || message.replyTo === loopId
   })
+}
+
+function loopMessagesFor(loopId) {
+  return currentMessages.filter((message) => {
+    if (!loopId) return false
+    return (message.loopId || message.id) === loopId || message.replyTo === loopId
+  })
+}
+
+function responseStateFor(request) {
+  const loopId = request.loopId || request.id
+  const loopMessages = loopMessagesFor(loopId)
+  const replies = responseMessagesFor(loopId)
+  const latestReply = replies.at(-1)
+  const hasAutoAck = loopMessages.some((message) => isAutoAckClient(message))
+  const blocked = loopMessages.some((message) => !isAutoAckClient(message) && message.status === 'blocked')
+
+  if (blocked) {
+    return {
+      key: 'blocked',
+      label: '막힘',
+      detail: latestReply
+        ? `${labels[latestReply.speaker] || latestReply.speaker}: ${messageTitle(latestReply)}`
+        : '담당자가 막힘으로 표시했습니다. 추가 판단이 필요합니다.',
+      message: latestReply || request,
+    }
+  }
+
+  if (latestReply) {
+    const status = latestReply.status || 'todo'
+    return {
+      key: status === 'done' ? 'done' : 'processing',
+      label: status === 'done' ? '답변 완료' : '처리 중',
+      detail: `${labels[latestReply.speaker] || latestReply.speaker}: ${messageTitle(latestReply)}`,
+      message: latestReply,
+    }
+  }
+
+  if (hasAutoAck) {
+    return {
+      key: 'no-answer',
+      label: '실제 답변 없음',
+      detail: '자동 접수만 있습니다. Claude/Codex가 아직 실제 답변을 남기지 않았습니다.',
+      message: request,
+    }
+  }
+
+  return {
+    key: 'pending',
+    label: '답변 대기',
+    detail: '아직 접수 또는 답변 기록이 없습니다.',
+    message: request,
+  }
 }
 
 function updateStatusUI(message) {
@@ -300,10 +363,33 @@ function messageTitle(message) {
   return (message.body || '').split('\n').find(Boolean)?.slice(0, 90) || '새 공유'
 }
 
+function requestForReply(reply) {
+  const loopId = reply.loopId || reply.replyTo
+  return currentMessages.find((message) => message.speaker === 'user' && ((message.loopId || message.id) === loopId || message.id === reply.replyTo))
+}
+
+function codexReplyCommand(message) {
+  const loopId = message.loopId || message.id
+  return [
+    'powershell -ExecutionPolicy Bypass -File .\\scripts\\post-message.ps1',
+    '  -Speaker codex',
+    '  -Kind review',
+    '  -Target room',
+    '  -TaskType question',
+    '  -Status done',
+    `  -LoopId "${loopId}"`,
+    `  -ReplyTo "${message.id}"`,
+    '  -Body "Codex 답변 내용을 여기에 입력"',
+  ].join('\n')
+}
+
 function trackIncomingMessages(messages) {
   const nextIds = new Set(messages.map((message) => message.id))
   if (!payloadInitialized) {
     knownMessageIds = nextIds
+    if (!userMessageSent) {
+      acknowledgedReplyIds = new Set(messages.filter((message) => isRealReply(message)).map((message) => message.id))
+    }
     payloadInitialized = true
     return
   }
@@ -314,14 +400,107 @@ function trackIncomingMessages(messages) {
 
   for (const message of incoming) {
     highlightedMessageIds.add(message.id)
+    if (isRealReply(message)) {
+      unreadReplyIds.add(message.id)
+      latestUnreadReplyId = message.id
+    }
   }
   highlightedMessageIds = new Set([...highlightedMessageIds].slice(-20))
+  unreadReplyIds = new Set([...unreadReplyIds].slice(-20))
 
   const latestAction = [...incoming].reverse().find((message) => !message.body?.startsWith('[Agent Room 자동 접수]')) || incoming.at(-1)
   latestRoutedMessageId = latestAction.id
   activeMessageId = latestAction.id
   currentFilter = 'all'
   for (const button of filterButtons) button.classList.toggle('active', button.dataset.filter === 'all')
+}
+
+function trackPendingReplies(messages) {
+  const liveUserLoopIds = new Set(
+    messages
+      .filter((message) => message.speaker === 'user')
+      .map((message) => message.loopId || message.id)
+  )
+  for (const loopId of [...pendingReplyLoopIds]) {
+    if (!liveUserLoopIds.has(loopId)) {
+      pendingReplyLoopIds.delete(loopId)
+      continue
+    }
+    const reply = messages.find((message) => isRealReply(message) && ((message.loopId || message.id) === loopId || message.replyTo === loopId))
+    if (!reply) continue
+    unreadReplyIds.add(reply.id)
+    latestUnreadReplyId = reply.id
+    pendingReplyLoopIds.delete(loopId)
+  }
+  const liveMessageIds = new Set(messages.map((message) => message.id))
+  for (const id of [...acknowledgedReplyIds]) {
+    if (!liveMessageIds.has(id)) acknowledgedReplyIds.delete(id)
+  }
+  for (const id of [...unreadReplyIds]) {
+    if (!liveMessageIds.has(id)) unreadReplyIds.delete(id)
+  }
+}
+
+function mountReplyNotice() {
+  if (document.querySelector('#reply-notice')) return
+  const workspace = document.querySelector('.workspace')
+  if (!workspace) return
+  const notice = document.createElement('button')
+  notice.id = 'reply-notice'
+  notice.className = 'reply-notice'
+  notice.type = 'button'
+  notice.hidden = true
+  notice.innerHTML = `
+    <span>확인 필요</span>
+    <strong></strong>
+    <small></small>
+  `
+  workspace.insertAdjacentElement('beforebegin', notice)
+  notice.addEventListener('click', () => {
+    const reply = currentMessages.find((message) => message.id === latestUnreadReplyId)
+    if (!reply) return
+    unreadReplyIds.delete(reply.id)
+    acknowledgedReplyIds.add(reply.id)
+    activeMessageId = reply.id
+    setWorkView('all')
+    selectMessage(reply)
+    renderMessages(currentMessages)
+    renderReplyNotice()
+  })
+}
+
+function renderReplyNotice() {
+  const notice = document.querySelector('#reply-notice')
+  if (!notice) return
+  let unreadReplies = [...unreadReplyIds]
+    .map((id) => currentMessages.find((message) => message.id === id))
+    .filter(Boolean)
+  if (unreadReplies.length === 0) {
+    const latestSubmittedRequest = latestSubmittedBody
+      ? currentMessages.find((message) => message.speaker === 'user' && message.body === latestSubmittedBody)
+      : null
+    if (latestSubmittedRequest) {
+      const loopId = latestSubmittedRequest.loopId || latestSubmittedRequest.id
+      const latestSubmittedReply = currentMessages.find((message) => isRealReply(message) && ((message.loopId || message.id) === loopId || message.replyTo === latestSubmittedRequest.id))
+      if (latestSubmittedReply && !acknowledgedReplyIds.has(latestSubmittedReply.id)) {
+        unreadReplies = [latestSubmittedReply]
+      }
+    }
+  }
+  if (unreadReplies.length === 0) {
+    unreadReplies = currentMessages
+      .filter((message) => isRealReply(message) && !acknowledgedReplyIds.has(message.id))
+      .slice(-1)
+  }
+  const latestReply = unreadReplies.at(-1)
+  latestUnreadReplyId = latestReply ? latestReply.id : null
+  notice.hidden = !latestReply
+  if (!latestReply) return
+  const request = requestForReply(latestReply)
+  notice.querySelector('strong').textContent = `${labels[latestReply.speaker] || latestReply.speaker} 답변 도착`
+  notice.querySelector('small').textContent = request
+    ? `${messageTitle(request)} → ${messageTitle(latestReply)}`
+    : messageTitle(latestReply)
 }
 
 function renderRecentRouting() {
@@ -343,7 +522,7 @@ function mountAnswerPanel() {
   panel.innerHTML = `
     <div class="answer-head">
       <div>
-        <span>답변함</span>
+        <span>답변 상태</span>
         <h3>최근 답변</h3>
       </div>
       <button type="button" data-answer-view="all">전체 작업 보기</button>
@@ -376,29 +555,45 @@ function renderAnswerPanel(messages) {
     return
   }
 
+  let latestNotice = null
   for (const request of requests) {
-    const loopId = request.loopId || request.id
-    const replies = responseMessagesFor(loopId)
-    const latestReply = replies.at(-1)
+    const responseState = responseStateFor(request)
+    if (isRealReply(responseState.message) && !acknowledgedReplyIds.has(responseState.message.id)) {
+      unreadReplyIds.add(responseState.message.id)
+      latestUnreadReplyId = responseState.message.id
+      if (!latestNotice) latestNotice = { request, reply: responseState.message }
+    }
     const item = document.createElement('button')
     item.type = 'button'
-    item.className = `answer-item ${latestReply ? 'has-reply' : 'pending'}`
+    item.className = `answer-item answer-${responseState.key}`
     item.innerHTML = `
-      <span>${latestReply ? '답변 완료' : '답변 대기'}</span>
+      <span>${responseState.label}</span>
       <strong></strong>
       <small></small>
     `
     item.querySelector('strong').textContent = messageTitle(request)
-    item.querySelector('small').textContent = latestReply
-      ? `${labels[latestReply.speaker] || latestReply.speaker}: ${messageTitle(latestReply)}`
-      : '자동 접수만 완료되었습니다. 실제 답변은 아직 없습니다.'
+    item.querySelector('small').textContent = responseState.detail
     item.addEventListener('click', () => {
-      activeMessageId = latestReply ? latestReply.id : request.id
+      activeMessageId = responseState.message.id
+      if (isRealReply(responseState.message)) {
+        unreadReplyIds.delete(responseState.message.id)
+        acknowledgedReplyIds.add(responseState.message.id)
+      }
       setWorkView('all')
-      selectMessage(latestReply || request)
+      selectMessage(responseState.message)
       renderMessages(currentMessages)
+      renderReplyNotice()
     })
     list.appendChild(item)
+  }
+  if (latestNotice) {
+    const notice = document.querySelector('#reply-notice')
+    if (notice) {
+      latestUnreadReplyId = latestNotice.reply.id
+      notice.hidden = false
+      notice.querySelector('strong').textContent = `${labels[latestNotice.reply.speaker] || latestNotice.reply.speaker} 답변 도착`
+      notice.querySelector('small').textContent = `${messageTitle(latestNotice.request)} → ${messageTitle(latestNotice.reply)}`
+    }
   }
 }
 
@@ -461,6 +656,7 @@ function createStatusActions(message) {
 function visibleMessages() {
   const query = searchEl.value.trim().toLowerCase()
   return currentMessages.filter((message) => {
+    if (isAutoAckClient(message) && !query && currentFilter === 'all') return false
     const speakerMatches = currentFilter === 'all' || message.speaker === currentFilter
     if (!speakerMatches) return false
     if (!workViewMatches(message)) return false
@@ -483,6 +679,10 @@ function selectMessage(message) {
     detailEl.innerHTML = '<strong>선택된 메시지 없음</strong><p>메시지를 선택하면 전체 작업 내용과 공유 대상을 확인할 수 있습니다.</p>'
     return
   }
+  if (isRealReply(message)) {
+    unreadReplyIds.delete(message.id)
+    acknowledgedReplyIds.add(message.id)
+  }
 
   const targetLabel = labels[message.target || 'room'] || '채팅방 기록'
   const statusLabel = statusLabels[message.status || 'todo'] || '기록'
@@ -500,6 +700,13 @@ function selectMessage(message) {
     <pre></pre>
   `
   detailEl.querySelector('pre').textContent = message.body
+  if (message.speaker === 'user') {
+    const command = document.createElement('div')
+    command.className = 'reply-command'
+    command.innerHTML = '<strong>Codex 답변 등록</strong><p>이 질문에 실제 답변을 남길 때 같은 루프에 연결되는 명령입니다.</p><code></code>'
+    command.querySelector('code').textContent = codexReplyCommand(message)
+    detailEl.appendChild(command)
+  }
   updateStatusUI(message)
 }
 
@@ -523,6 +730,7 @@ function renderMessages(messages) {
   const counts = { user: 0, claude: 0, codex: 0 }
 
   for (const message of messages) {
+    if (isAutoAckClient(message)) continue
     counts[message.speaker] += 1
   }
 
@@ -637,7 +845,7 @@ function renderQueueList(container, countEl, messages) {
 }
 
 function renderQueues(messages) {
-  const routedMessages = messages.filter((message) => (message.status || 'todo') !== 'done' && message.status !== 'logged')
+  const routedMessages = messages.filter((message) => !isAutoAckClient(message) && (message.status || 'todo') !== 'done' && message.status !== 'logged')
   renderQueueList(queueRoomEl, queueCountRoomEl, routedMessages.filter((message) => (message.target || 'room') === 'room'))
   renderQueueList(queueBothEl, queueCountBothEl, routedMessages.filter((message) => message.target === 'both'))
   renderQueueList(queueGptEl, queueCountGptEl, routedMessages.filter((message) => message.target === 'gpt'))
@@ -690,6 +898,7 @@ function renderLoops(loops = []) {
 
 function renderPayload(payload) {
   trackIncomingMessages(payload.messages)
+  trackPendingReplies(payload.messages)
   renderOpsMetrics(payload.messages)
   renderMessages(payload.messages)
   renderAnswerPanel(payload.messages)
@@ -708,7 +917,8 @@ function renderPayload(payload) {
   }
   const autoAckState = payload.autoAckEnabled ? '자동 접수: 활성화' : '자동 접수: 비활성화'
   const postingState = payload.agentPostingEnabled ? 'Claude/Codex 등록: 활성화됨' : 'Claude/Codex 등록: .env의 ADMIN_SECRET 필요'
-  agentEnabledEl.textContent = `${autoAckState} · ${postingState}`
+  const replyState = payload.autoReplyEnabled ? `실제 답변: ${payload.autoReplyMode === 'local' ? '로컬 자동 답변' : payload.autoReplyMode}` : '실제 답변: 비활성화'
+  agentEnabledEl.textContent = `${autoAckState} · ${postingState} · ${replyState}`
 }
 
 async function loadRoom() {
@@ -749,6 +959,16 @@ function startEventStream() {
 async function postUserMessage(kind, body) {
   const loopLink = pendingLoopLink
   pendingLoopLink = null
+  userMessageSent = true
+  latestSubmittedBody = body
+  unreadReplyIds.clear()
+  for (const message of currentMessages) {
+    if (isRealReply(message)) acknowledgedReplyIds.add(message.id)
+  }
+  if (!loopLink && kind === 'direction' && taskTypeEl.value === 'question') {
+    currentTarget = 'both'
+    updateTargetUI()
+  }
   const response = await fetch('/api/messages', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -763,7 +983,17 @@ async function postUserMessage(kind, body) {
   })
   const payload = await response.json()
   if (!response.ok) throw new Error(payload.error || '메시지를 저장하지 못했습니다.')
+  const postedMessage = [...payload.messages].reverse().find((message) => message.speaker === 'user' && message.body === body)
+  if (postedMessage) {
+    pendingReplyLoopIds.add(postedMessage.loopId || postedMessage.id)
+  }
   renderPayload(payload)
+  if (kind === 'direction' && taskTypeEl.value === 'question') {
+    setError('질문을 Claude와 Codex에게 전달했습니다. 답변이 오면 상단에 확인 필요 알림이 표시됩니다.')
+    setTimeout(() => {
+      loadRoom().catch((error) => setError(error.message))
+    }, 700)
+  }
 }
 
 async function updateMessageStatus(id, status) {
@@ -815,7 +1045,8 @@ form.addEventListener('submit', async (event) => {
 })
 
 bodyEl.addEventListener('keydown', (event) => {
-  if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+  if (event.key === 'Enter' && !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey && !event.isComposing) {
+    event.preventDefault()
     form.requestSubmit()
   }
 })
@@ -1043,6 +1274,7 @@ for (const button of filterButtons) {
 mountYesterdayWorkView()
 mountDevelopmentStudio()
 mountAnswerPanel()
+mountReplyNotice()
 localizeStaticChrome()
 setWorkView('yesterday')
 updateTargetUI()
