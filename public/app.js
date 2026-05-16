@@ -360,7 +360,20 @@ function isYesterday(value) {
 }
 
 function messageTitle(message) {
-  return (message.body || '').split('\n').find(Boolean)?.slice(0, 90) || '새 공유'
+  const lines = String(message.body || '').split('\n')
+  if (lines[0]?.trim() === '[Voice DevCore]') {
+    const transcript = lines
+      .slice(1)
+      .filter((line) => {
+        const trimmed = line.trim()
+        return trimmed && !trimmed.includes('=')
+      })
+      .join(' ')
+      .trim()
+    if (transcript) return transcript.slice(0, 90)
+  }
+
+  return lines.find(Boolean)?.slice(0, 90) || '새 공유'
 }
 
 function requestForReply(reply) {
