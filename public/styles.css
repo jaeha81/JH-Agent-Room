@@ -2159,3 +2159,114 @@ body.show-tools .chat-actions #export-log {
     margin: 10px;
   }
 }
+
+/* Mobile remote-control mode */
+@media (max-width: 640px) {
+  body {
+    background: #eef4f0;
+  }
+
+  .topbar {
+    padding: 10px;
+  }
+
+  .eyebrow,
+  .subtitle,
+  .status-pills span,
+  #open-harness,
+  #toggle-ops {
+    display: none;
+  }
+
+  .status-pills {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .status-pills .top-action {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .layout {
+    padding: 0;
+  }
+
+  .chat-panel {
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .chat-header {
+    padding: 10px;
+  }
+
+  .chat-header h2 {
+    font-size: 18px;
+  }
+
+  .chat-header p {
+    display: none;
+  }
+
+  .quick-targets {
+    display: grid;
+    grid-template-columns: 1fr;
+    order: 2;
+    padding: 0 10px 8px;
+  }
+
+  .quick-target {
+    min-height: 58px;
+    padding: 10px;
+  }
+
+  .quick-target span {
+    display: none;
+  }
+
+  .composer {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    order: 3;
+    margin: 0 10px 10px;
+    padding: 10px;
+    box-shadow: 0 10px 22px rgba(16, 32, 24, 0.12);
+  }
+
+  .composer::before {
+    content: "모바일 제어";
+  }
+
+  .composer-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .composer textarea {
+    min-height: 132px;
+    max-height: 240px;
+    font-size: 16px;
+  }
+
+  .composer button[type="submit"] {
+    min-height: 54px;
+    font-size: 16px;
+  }
+
+  .ops-metrics {
+    order: 4;
+  }
+
+  .answer-panel {
+    order: 5;
+  }
+
+  body.show-tools .workspace {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}
