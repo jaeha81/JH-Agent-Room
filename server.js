@@ -1159,18 +1159,36 @@ function handleKnowledgeSearch(url, res) {
   sendJson(res, 200, { query: q, results })
 }
 
-function handleOverdueReviews(res) {
+function hasActiveReviewReminder(message, messages) {
+  return messages.some((candidate) =>
+    candidate.speaker === 'claude' &&
+    candidate.kind === 'direction' &&
+    candidate.taskType === 'review' &&
+    candidate.replyTo === message.id &&
+    candidate.status !== 'done'
+  )
+}
+
+function parsePositiveInt(value, fallback, max) {
+  const parsed = Number.parseInt(value, 10)
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback
+  return Math.min(parsed, max)
+}
+
+function handleOverdueReviews(url, res) {
   const now = new Date().toISOString()
   const messages = readMessages()
+  const limit = parsePositiveInt(url.searchParams.get('limit'), 50, 200)
   const overdue = messages.filter((m) =>
     m.speaker === 'codex' &&
     m.kind === 'review' &&
     m.status === 'todo' &&
     !m.autoAck &&
     m.reviewDeadline &&
-    m.reviewDeadline < now
+    m.reviewDeadline < now &&
+    !hasActiveReviewReminder(m, messages)
   )
-  sendJson(res, 200, { count: overdue.length, items: overdue })
+  sendJson(res, 200, { count: overdue.length, returned: Math.min(overdue.length, limit), limit, items: overdue.slice(0, limit) })
 }
 
 const server = http.createServer((req, res) => {
@@ -1185,7 +1203,7 @@ const server = http.createServer((req, res) => {
   if (url.pathname === '/api/inbox' && req.method === 'GET') return handleInboxGet(url, res)
   if (url.pathname === '/api/inbox/scan' && req.method === 'POST') return handleInboxScan(url, res)
   if (url.pathname === '/api/events' && req.method === 'GET') return handleEvents(req, res)
-  if (url.pathname === '/api/overdue-reviews' && req.method === 'GET') return handleOverdueReviews(res)
+  if (url.pathname === '/api/overdue-reviews' && req.method === 'GET') return handleOverdueReviews(url, res)
   if (url.pathname === '/api/knowledge/search' && req.method === 'GET') return handleKnowledgeSearch(url, res)
 
   const filePath = url.pathname === '/' ? path.join(PUBLIC_DIR, 'index.html') : path.normalize(path.join(PUBLIC_DIR, url.pathname))

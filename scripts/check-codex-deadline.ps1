@@ -3,7 +3,9 @@
 # Task Scheduler 에서 5분 간격으로 실행.
 
 param(
-  [string]$Url = 'http://localhost:3100'
+  [string]$Url = 'http://localhost:3100',
+  [int]$MaxReminders = 25,
+  [switch]$DryRun
 )
 
 $ErrorActionPreference = 'Stop'
@@ -19,7 +21,7 @@ if (Test-Path $EnvFile) {
   }
 }
 
-if (!$env:ADMIN_SECRET) {
+if (!$env:ADMIN_SECRET -and !$DryRun) {
   Write-Warning 'ADMIN_SECRET is not set — cannot post reminder messages. Exiting.'
   exit 1
 }
@@ -33,16 +35,21 @@ try {
 }
 
 # overdue review 목록 조회
-$Result = Invoke-RestMethod -Uri "$Url/api/overdue-reviews" -Method Get
+$SafeMaxReminders = [Math]::Max(1, [Math]::Min($MaxReminders, 200))
+$Result = Invoke-RestMethod -Uri "$Url/api/overdue-reviews?limit=$SafeMaxReminders" -Method Get
 $Count  = $Result.count
-$Items  = $Result.items
+$Items  = @($Result.items) | Select-Object -First $SafeMaxReminders
+$Returned = $Items.Count
 
 if ($Count -eq 0) {
   Write-Host "[check-codex-deadline] No overdue reviews."
   exit 0
 }
 
-Write-Host "[check-codex-deadline] $Count overdue Codex review(s) found."
+Write-Host "[check-codex-deadline] $Count overdue Codex review(s) found; processing $Returned this run."
+if ($DryRun) {
+  Write-Host "[check-codex-deadline] DryRun enabled; no reminders will be posted."
+}
 
 $Headers = @{ 'x-admin-secret' = $env:ADMIN_SECRET }
 
@@ -69,6 +76,11 @@ Codex가 응답하지 않은 경우 수동으로 확인하거나 /api/messages/s
     replyTo  = $Id
     body     = $Body
   } | ConvertTo-Json -Compress
+
+  if ($DryRun) {
+    Write-Host "  Dry run: would post reminder for review $Id"
+    continue
+  }
 
   try {
     Invoke-RestMethod -Uri "$Url/api/messages" -Method Post `
