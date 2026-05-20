@@ -1,4 +1,4 @@
-# JH-Agent-Room 작업 큐
+﻿# JH-Agent-Room 작업 큐
 
 ## 진행 중
 - (없음)
@@ -16,3 +16,5 @@
   - jh-brain-system: AGENTS.md, CURRENT_STATE.md, TASK.md, VALIDATION.md 생성 (CLAUDE.md 보존)
   - jh-harness: CURRENT_STATE.md, TASK.md, VALIDATION.md 생성 (CLAUDE.md·AGENTS.md 보존)
   - jh-CapitalBridge Intelligence: CLAUDE.md, AGENTS.md, CURRENT_STATE.md, TASK.md, VALIDATION.md 생성
+- [x] 음성 바이브 코딩 + Obsidian 연동 통합 구조 구축 핸드오프 기록 (2026-05-18, Claude)
+- [x] Codex WARNING 해소 — 인코딩 재저장 + 경로 기준 명확화 (2026-05-18, Claude)
