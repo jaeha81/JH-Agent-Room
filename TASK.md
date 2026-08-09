@@ -4,7 +4,13 @@
 - (없음)
 
 ## 대기 중
-- [ ] 로그파일 루트 노출 정리 (우선순위 낮음 — L0 판단 후)
+- [ ] [P0] 포스온 경비 정산 — AS 외근 집계 오류 수정 (L0 승인 후 Claude Code 착수, Codex 검수 필수)
+- [ ] [P0] 포스온 경비 정산 — 화면 기준 UX 수정 (2026-08-09 김기홍 팀장 요청)
+- [ ] [P1] GitHub PAT gh-cli 로컬 토큰 교체 (2026-08-08 재발급 알림 수신)
+- [ ] [P1] 블랙야크 3개 지점 입찰자료 검토 (인천계산점·경북 상주점·대구 서부점)
+- [ ] [P2] Daily Plus Pipeline 복구 — pip install websocket-client playwright
+- [ ] [P2] Charlie 감사 스크립트 인코딩 수정 (UnicodeDecodeError)
+- [ ] [P3] 로그파일 루트 노출 정리 (우선순위 낮음 — L0 판단 후)
 
 ## 완료
 - [x] VALIDATION 인벤토리 (2026-05-07, Claude)
