@@ -1,10 +1,19 @@
-﻿# JH-Agent-Room 작업 큐
+# JH-Agent-Room 작업 큐
+
+## 긴급 (L0 승인 필요)
+- [ ] [CRITICAL] Supabase brain-system RLS 활성화 — 공개 테이블 접근 차단
+- [ ] [CRITICAL] Supabase brain-system 민감 데이터 API 노출 해소
+  - 대시보드: https://supabase.com/dashboard/project/yxkgdnbqplolhuogrzmd/advisors/security
+- [ ] 포스온컨펌 김기홍 팀장 수정 요청 반영 (2026-08-11)
+  - [오늘 업무] 업무 카드 빨간색 스타일 적용 (사진 참조)
+  - [오늘 업무 + 예정 업무] 1번 적용 방식 통일
 
 ## 진행 중
 - (없음)
 
 ## 대기 중
 - [ ] 로그파일 루트 노출 정리 (우선순위 낮음 — L0 판단 후)
+- [ ] Draft PR #1, #2 병합 또는 클로즈 판단 (L0)
 
 ## 완료
 - [x] VALIDATION 인벤토리 (2026-05-07, Claude)
