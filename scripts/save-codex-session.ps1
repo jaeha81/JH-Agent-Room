@@ -15,6 +15,17 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# ⛔ 출력을 UTF-8 로 고정한다. PowerShell 5.1 은 콘솔 코드페이지(한국어 윈도우=cp949)로
+# 내보내는데, 이 스크립트의 오류 문구에는 한글이 섞인다. 그러면 UTF-8 로 읽는 쪽이
+# `UnicodeDecodeError` 로 죽고 stderr 가 통째로 None 이 되어 **왜 실패했는지가 사라진다**
+# (2026-08-13 실측: 부르는 쪽 테스트 3건이 TypeError 로 넘어졌고 원인 문구를 못 봤다).
+try {
+  [Console]::OutputEncoding = [Text.Encoding]::UTF8
+  $OutputEncoding = [Text.Encoding]::UTF8
+} catch {
+  # 콘솔이 없는 환경(리다이렉트 전용)에서는 설정이 막힐 수 있다 — 여기서 죽지 않는다.
+}
+
 if ([string]::IsNullOrWhiteSpace($Summary)) {
   throw 'Summary is required. Refusing to save an ambiguous Codex handoff.'
 }
