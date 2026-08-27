@@ -1,26 +1,33 @@
 ﻿# JH-Agent-Room 현재 상태
 
-최종 업데이트: 2026-05-18
+최종 업데이트: 2026-08-27 (원격 루틴 자동 갱신)
 
 ## 브랜치 / 동기화
-- 브랜치: main (단일)
-- 리모트: origin/main — up to date
-- 워킹트리: clean
+- main 브랜치 마지막 커밋: 2026-05-20 ("Record Agent Room vibe coding handoff")
+- 원격 루틴 브랜치 누적: 15개 draft PR 미머지 (PR #1 ~ #15, 2026-08-09 ~ 2026-08-26)
+- **⚠️ 구조 이슈**: main에 반영된 원격 루틴 변경사항 없음 — L0 머지 결정 필요
 
 ## 진행 중인 작업
-- (없음)
+- 원격 루틴 일일 보고 (자동 — 매일 야간)
 
-## 마지막 완료 작업
-- 2026-05-18: 음성 바이브 코딩 + Obsidian 연동 통합 구조 구축 (Claude) — 상세: docs/session-handoff-2026-05-18.md
-  - CLAUDE.md 2개 섹션 추가 (Obsidian Knowledge Base, Vibe Coding)
-  - guides/ 신규 2개: CONTEXT_RULES.md, AGENT_ROLES.md
-  - workflow.md 음성 명령 7단계 섹션 추가
-  - Obsidian 신규 폴더 2개 + 프로젝트 템플릿 9개 생성
+## 마지막 완료 작업 (main 기준)
+- 2026-05-20: Agent Room vibe coding handoff 기록 (재하 직접 커밋)
+- 2026-05-18: 음성 바이브 코딩 + Obsidian 연동 통합 구조 구축 (Claude)
 - 2026-05-10: REPO_REGISTRY.yml v2.0 — 75개 레포 A/B/C/D 등급 분류 (재하 L0 확정)
 - 2026-05-10: Phase 3 — A등급 3개 레포 컨텍스트 파일 전체 배치 완료 (Claude)
+
+## 오늘(2026-08-27) Google Drive 업무 활동 감지
+- 경복대학교 창조관 B1F AI 역량 인증센터 구축공사 실행예산서 작업
+- 청담르엘 아파트 이언아이디 실행예산서 작업
+- 블랙야크 롯데 프리미엄아울렛 이천점 입찰자료 수신 (외부 공유)
+- 협력사견적서 폴더 신규 생성
+
+## GitHub 이슈
+- 오픈 이슈: 0건
 
 ## Codex 검토 결과
 - WARNING 해소 완료 (2026-05-18): 인코딩 재저장 + 경로 기준 명확화
 
 ## 알려진 이슈
-- 로그파일 4개 루트 노출 (agent-room.*.log) — 정리 후보
+- 로그파일 4개 루트 노출 (agent-room.*.log) — 정리 후보 (L0 판단 대기)
+- 원격 루틴 draft PR 15개 미머지 누적 — L0 머지 또는 정리 결정 필요
