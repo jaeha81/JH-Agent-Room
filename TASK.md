@@ -4,7 +4,11 @@
 - (없음)
 
 ## 대기 중
-- [ ] 로그파일 루트 노출 정리 (우선순위 낮음 — L0 판단 후)
+- [ ] 🔴 bucky-interior-match commit c6014ec Generic Password rotate (긴급 — L0 직접 처리)
+- [ ] 🔴 Grok/Cursor Google 계정 접근 승인 본인 확인 (2026-09-26 보안 알림)
+- [ ] 🟡 Vercel threads-monetization 배포 실패 원인 조사 (backup/2026-09-25)
+- [ ] 🟡 draft PR #1~#24 일괄 정리 (close 또는 squash merge — L0 승인 후 Claude 실행)
+- [ ] ⚪ 로그파일 루트 노출 정리 (우선순위 낮음 — L0 판단 후)
 
 ## 완료
 - [x] VALIDATION 인벤토리 (2026-05-07, Claude)
